@@ -1,0 +1,63 @@
+indicator (0.1.0-179) unstable; urgency=low
+
+  * apply notification display app 
+  * Git: pkgs/i/indicator-win
+  * Tag: indicator_0.1.0-179
+
+ -- Jeonghoon Park <jh1979.park@samsung.com>  Fri, 06 Apr 2012 10:10:58 +0900
+
+indicator (0.1.0-178) unstable; urgency=low
+
+  * bug fix on battery animation
+  * Git: pkgs/i/indicator-win
+  * Tag: indicator_0.1.0-178
+
+ -- Jeonghoon Park <jh1979.park@samsung.com>  Wed, 04 Apr 2012 12:19:19 +0900
+
+indicator (0.1.0-177) unstable; urgency=low
+
+  * update latest version
+  * Git: pkgs/i/indicator-win
+  * Tag: indicator_0.1.0-177
+
+ -- Jeonghoon Park <jh1979.park@samsung.com>  Wed, 22 Feb 2012 14:57:37 +0900
+
+indicator (0.1.0-176) unstable; urgency=low
+
+  * Modify CMakeList file and remove unused dir
+  * Git: pkgs/i/indicator-win
+  * Tag: indicator_0.1.0-176 
+
+ -- Junghyun Kim <jh1114.kim@samsung.com>  Fri, 30 Dec 2011 18:02:40 +0900
+
+indicator (0.1.0-175) unstable; urgency=low
+
+  * Remove flight mode and unused file
+  * Git: pkgs/i/indicator-win
+  * Tag: indicator_0.1.0-175
+
+ -- Junghyun Kim <jh1114.kim@samsung.com>  Wed, 28 Dec 2011 14:34:28 +0900
+
+indicator (0.1.0-174) unstable; urgency=low
+
+  * Change Package name and directory for tizen
+  * Git: pkgs/i/indicator-win
+  * Tag: indicator_0.1.0-174 
+
+ -- Junghyun Kim <jh1114.kim@samsung.com>  Fri, 23 Dec 2011 16:17:20 +0900
+
+indicator (0.1.0-173) unstable; urgency=low
+
+  * Remove defined name of unused pkg name in code
+  * Git: pkgs/i/indicator-win
+  * Tag: indicator_0.1.0-173
+
+ -- Junghyun Kim <jh1114.kim@samsung.com>  Wed, 21 Dec 2011 14:50:33 +0900
+
+indicator (0.1.0-172) unstable; urgency=low
+
+  * Initial Release
+  * Git: pkgs/i/indicator-win
+  * Tag: indicator_0.1.0-172
+
+ -- Junghyun Kim <jh1114.kim@samsung.com>  Wed, 07 Dec 2011 13:33:14 +0900
