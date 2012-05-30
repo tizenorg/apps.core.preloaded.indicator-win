@@ -9,6 +9,7 @@ Release:    1
 Group:      utils
 License:    Samsung Proprietary License
 Source0:    %{name}-%{version}.tar.gz
+Source1001: packaging/org.tizen.indicator.manifest 
 
 BuildRequires:  pkgconfig(appcore-efl)
 BuildRequires:  pkgconfig(dlog)
@@ -38,6 +39,7 @@ indicator window.
 %setup -q
 
 %build
+cp %{SOURCE1001} .
 LDFLAGS+="-Wl,--rpath=%{PREFIX}/lib -Wl,--as-needed";export LDFLAGS
 cmake . -DCMAKE_INSTALL_PREFIX=%{PREFIX}
 make %{?jobs:-j%jobs}
@@ -93,6 +95,7 @@ rm -f /etc/rc.d/rc5.d/S01indicator
 rm -f /etc/rc.d/rc3.d/S44indicator
 
 %files
+%manifest org.tizen.indicator.manifest
 %defattr(-,root,root,-)
 /opt/apps/org.tizen.indicator/bin/*
 /opt/apps/org.tizen.indicator/res/locale/*
