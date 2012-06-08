@@ -1,0 +1,15 @@
+msgid "IDS_COM_BODY_NO_SIM"
+msgstr "SIM​が​ありません"
+
+msgid "IDS_COM_BODY_SEARCHING"
+msgstr "検索中"
+
+msgid "IDS_COM_POP_AM_M_ABB"
+msgstr "午前"
+
+msgid "IDS_COM_POP_PM_M_ABB"
+msgstr "午後"
+
+msgid "IDS_CALL_POP_NOSERVICE"
+msgstr "サービス​が​利用​できません"
+

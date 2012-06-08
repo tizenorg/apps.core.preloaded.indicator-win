@@ -1,0 +1,15 @@
+msgid "IDS_COM_BODY_NO_SIM"
+msgstr "Δεν βρέθηκε SIM"
+
+msgid "IDS_COM_BODY_SEARCHING"
+msgstr "Αναζήτηση"
+
+msgid "IDS_COM_POP_AM_M_ABB"
+msgstr "ΠΜ"
+
+msgid "IDS_COM_POP_PM_M_ABB"
+msgstr "ΜΜ"
+
+msgid "IDS_CALL_POP_NOSERVICE"
+msgstr "Μη διαθέσιμη υπηρεσία"
+

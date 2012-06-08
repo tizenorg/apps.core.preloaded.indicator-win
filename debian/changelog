@@ -1,0 +1,8 @@
+indicator (0.1.0-180) unstable; urgency=low
+
+  * update boilerplate 
+  * Git: pkgs/i/indicator-win
+  * Tag: indicator_0.1.0-180
+
+ -- Jeonghoon Park <jh1979.park@samsung.com>  Wed, 02 May 2012 17:33:44 +0900
+
