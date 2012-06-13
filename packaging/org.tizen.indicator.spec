@@ -61,18 +61,6 @@ init_vconf()
 	vconftool set -t int memory/indicator/home_pressed 0 -i -g 6518
 }
 
-change_dir_permission()
-{
-    chown $INHOUSE_ID:$INHOUSE_ID $@ 2>/dev/null
-    if [ $? -ne 0 ]; then
-        echo "Failed to change the owner of $@"
-    fi  
-    chmod 775 $@ 2>/dev/null
-    if [ $? -ne 0 ]; then
-        echo "Failed to change the perms of $@"
-    fi  
-}
-
 change_file_executable()
 {
     chmod +x $@ 2>/dev/null
@@ -82,7 +70,6 @@ change_file_executable()
 }
 
 init_vconf
-change_dir_permission /opt/apps/org.tizen.indicator/data
 change_file_executable /etc/init.d/indicator
 mkdir -p /etc/rc.d/rc5.d/
 mkdir -p /etc/rc.d/rc3.d/
@@ -97,6 +84,7 @@ rm -f /etc/rc.d/rc3.d/S44indicator
 %files
 %manifest org.tizen.indicator.manifest
 %defattr(-,root,root,-)
+%attr(775,app,app) /opt/apps/org.tizen.indicator/data
 /opt/apps/org.tizen.indicator/bin/*
 /opt/apps/org.tizen.indicator/res/locale/*
 /opt/apps/org.tizen.indicator/res/icons/*
