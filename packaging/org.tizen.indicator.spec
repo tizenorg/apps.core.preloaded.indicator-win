@@ -9,7 +9,8 @@ Release:    1
 Group:      utils
 License:    Samsung Proprietary License
 Source0:    %{name}-%{version}.tar.gz
-Source1001: packaging/org.tizen.indicator.manifest 
+Source101:  indicator.service
+Source1001: org.tizen.indicator.manifest 
 
 BuildRequires:  pkgconfig(appcore-efl)
 BuildRequires:  pkgconfig(dlog)
@@ -48,38 +49,29 @@ make %{?jobs:-j%jobs}
 rm -rf %{buildroot}
 %make_install
 
+mkdir -p %{buildroot}/%{_sysconfdir}/rc.d/rc5.d/
+mkdir -p %{buildroot}/%{_sysconfdir}/rc.d/rc3.d/
+ln -s ../../init.d/indicator %{buildroot}/%{_sysconfdir}/rc.d/rc5.d/S01indicator
+ln -s ../../init.d/indicator %{buildroot}/%{_sysconfdir}/rc.d/rc3.d/S44indicator
+
+install -d %{buildroot}%{_libdir}/systemd/user/core-efl.target.wants
+install -m0644 %{SOURCE101} %{buildroot}%{_libdir}/systemd/user/
+ln -sf ../indicator.service %{buildroot}%{_libdir}/systemd/user/core-efl.target.wants/indicator.service
+
 %clean
 rm -rf %{buildroot}
 
+
 %post
-INHOUSE_ID="5000"
-
-init_vconf()
-{
-	vconftool set -t int memory/radio/state 0 -i -g 6518
-	vconftool set -t int memory/music/state 0 -i -g 6518
-	vconftool set -t int memory/indicator/home_pressed 0 -i -g 6518
-}
-
-change_file_executable()
-{
-    chmod +x $@ 2>/dev/null
-    if [ $? -ne 0 ]; then
-        echo "Failed to change the perms of $@"
-    fi  
-}
-
-init_vconf
-change_file_executable /etc/init.d/indicator
-mkdir -p /etc/rc.d/rc5.d/
-mkdir -p /etc/rc.d/rc3.d/
-ln -s  /etc/init.d/indicator /etc/rc.d/rc5.d/S01indicator
-ln -s  /etc/init.d/indicator /etc/rc.d/rc3.d/S44indicator
+vconftool set -t int memory/radio/state 0 -i -g 6518
+vconftool set -t int memory/music/state 0 -i -g 6518
+vconftool set -t int memory/indicator/home_pressed 0 -i -g 6518
 
 %postun
 /sbin/ldconfig 
 rm -f /etc/rc.d/rc5.d/S01indicator
 rm -f /etc/rc.d/rc3.d/S44indicator
+
 
 %files
 %manifest org.tizen.indicator.manifest
@@ -89,5 +81,9 @@ rm -f /etc/rc.d/rc3.d/S44indicator
 /opt/apps/org.tizen.indicator/res/locale/*
 /opt/apps/org.tizen.indicator/res/icons/*
 /opt/apps/org.tizen.indicator/res/edje/*
-/etc/init.d/indicator
+%attr(755,-,-) %{_sysconfdir}/init.d/indicator
 /usr/share/applications/indicator.desktop
+%{_sysconfdir}/rc.d/rc5.d/S01indicator
+%{_sysconfdir}/rc.d/rc3.d/S44indicator
+%{_libdir}/systemd/user/core-efl.target.wants/indicator.service
+%{_libdir}/systemd/user/indicator.service
