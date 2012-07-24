@@ -7,7 +7,7 @@ Summary:    indicator window
 Version:    0.1.0
 Release:    1
 Group:      utils
-License:    Samsung Proprietary License
+License:    Flora Software License
 Source0:    %{name}-%{version}.tar.gz
 Source101:  indicator.service
 Source1001: org.tizen.indicator.manifest 
