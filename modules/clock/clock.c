@@ -17,8 +17,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <vconf.h>
-#include <appcore-efl.h>
 #include <heynoti.h>
+#include <runtime_info.h>
 #include <Ecore_X.h>
 #include "common.h"
 #include "indicator.h"
@@ -119,7 +119,7 @@ static void indicator_clock_changed_cb(void *data)
 
 	snprintf(time_buf, sizeof(time_buf), LABEL_STRING,
 		 TIME_FONT_SIZE, time_str);
-	len = snprintf(buf, sizeof(buf), _("%s%s"), time_buf, ampm_buf);
+	len = snprintf(buf, sizeof(buf), "%s%s", time_buf, ampm_buf);
 	if (len < 0) {
 		ERR("Unexpected ERROR!");
 		return;
@@ -138,28 +138,23 @@ static void indicator_clock_format_changed_cb(keynode_t *node, void *data)
 
 	int r = -1;
 
+	bool is_24hour_enabled = false;
+
 	INFO("[Enter] indicator_clock_format_changed_cb");
 
-	enum appcore_time_format timeformat = APPCORE_TIME_FORMAT_UNKNOWN;
-	r = appcore_get_timeformat(&timeformat);
+	r = runtime_info_get_value_bool(
+			RUNTIME_INFO_KEY_24HOUR_CLOCK_FORMAT_ENABLED, &is_24hour_enabled);
 
 	/* Check Time format. If timeformat have invalid value, Set to 12H */
-	switch (timeformat) {
-	case APPCORE_TIME_FORMAT_UNKNOWN:
-		ERR("[Indicator] Unknown Time Format! = %d", timeformat);
-		clock_mode = INDICATOR_CLOCK_MODE_12H;
-		break;
-	case APPCORE_TIME_FORMAT_12:
-		clock_mode = INDICATOR_CLOCK_MODE_12H;
-		break;
-	case APPCORE_TIME_FORMAT_24:
+	if( r==RUNTIME_INFO_ERROR_NONE&&is_24hour_enabled==true)
+	{
 		clock_mode = INDICATOR_CLOCK_MODE_24H;
-		break;
-	default:
-		ERR("[Indicator] invalid Time Format Value! = %d", timeformat);
-		clock_mode = INDICATOR_CLOCK_MODE_12H;
-		break;
 	}
+	else
+	{
+		clock_mode = INDICATOR_CLOCK_MODE_12H;
+	}
+
 	indicator_clock_changed_cb(data);
 }
 
@@ -205,10 +200,10 @@ static int register_clock_module(void *data)
 		r = r | ret;
 	}
 
-	ret = vconf_notify_key_changed(VCONFKEY_SETAPPL_STATE_DST_BOOL,
+	ret = vconf_notify_key_changed(VCONFKEY_REGIONFORMAT_TIME1224,
 				       indicator_clock_format_changed_cb, data);
 	if (ret != OK) {
-		ERR("Fail: register VCONFKEY_SETAPPL_STATE_DST_BOOL");
+		ERR("Fail: register VCONFKEY_REGIONFORMAT_TIME1224");
 		r = r | ret;
 	}
 
@@ -236,10 +231,10 @@ static int unregister_clock_module(void)
 	heynoti_close(notifd);
 	notifd = 0;
 
-	ret = vconf_ignore_key_changed(VCONFKEY_SETAPPL_STATE_DST_BOOL,
+	ret = vconf_ignore_key_changed(VCONFKEY_REGIONFORMAT_TIME1224,
 				       indicator_clock_format_changed_cb);
 	if (ret != OK)
-		ERR("Fail: unregister VCONFKEY_SETAPPL_STATE_DST_BOOL");
+		ERR("Fail: unregister VCONFKEY_REGIONFORMAT_TIME1224");
 
 	ret = vconf_ignore_key_changed(VCONFKEY_SETAPPL_TIMEZONE_INT,
 				       indicator_clock_format_changed_cb);
@@ -257,10 +252,10 @@ static int hib_enter_clock_module(void)
 {
 	int ret;
 
-	ret = vconf_ignore_key_changed(VCONFKEY_SETAPPL_STATE_DST_BOOL,
+	ret = vconf_ignore_key_changed(VCONFKEY_REGIONFORMAT_TIME1224,
 				       indicator_clock_format_changed_cb);
 	if (ret != OK)
-		ERR("Fail: unregister VCONFKEY_SETAPPL_STATE_DST_BOOL");
+		ERR("Fail: unregister VCONFKEY_REGIONFORMAT_TIME1224");
 
 	if (timer != NULL) {
 		ecore_timer_del(timer);
@@ -276,7 +271,7 @@ static int hib_leave_clock_module(void *data)
 
 	retif(data == NULL, FAIL, "Invalid parameter!");
 
-	ret = vconf_notify_key_changed(VCONFKEY_SETAPPL_STATE_DST_BOOL,
+	ret = vconf_notify_key_changed(VCONFKEY_REGIONFORMAT_TIME1224,
 				       indicator_clock_format_changed_cb, data);
 	retif(ret != OK, FAIL, "Failed to register callback!");
 

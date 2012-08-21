@@ -14,13 +14,20 @@
  * limitations under the License.
  */
 
+
 #ifndef __INDICATOR_H__
 #define __INDICATOR_H__
 
 #include <Elementary.h>
 #include <Eina.h>
 
-#define VCONF_INDICATOR_HOME_PRESSED "memory/indicator/home_pressed"
+#define VCONF_INDICATOR_HOME_PRESSED "memory/private/"PACKAGE_NAME"/home_pressed"
+
+
+#ifndef VCONFKEY_INDICATOR_STARTED
+#define VCONFKEY_INDICATOR_STARTED "memory/private/"PACKAGE_NAME"/started"
+#endif /* VCONFKEY_INDICATOR_STARTED */
+
 
 enum {
 	/* Value is allocated from Left side in status bar */

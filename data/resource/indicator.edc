@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
- 
+
 #include "indicator_gui.h"
 #include "indicator_common.edc"
 
@@ -33,13 +33,17 @@ collections {
 				name: "textblock_outline_style";
 				base: "font=SLP:style=Medium style=outline color=#FFFFFFCC outline_color=#000000";
 			}
+			style {
+				name: "message_style";
+				base: "font=SLP:style=Medium font_size=26 color=#FFFFFFCC valign=middle wrap=none ellipsis=1";
+			}
 		}
 
 		images {
 			image: "B03_bg.png" COMP;
 			image: "B03_bg_press.png" COMP;
-			image: "B03_Status_notification_bg.png" COMP;
-			image: "B03_Status_transparent_bg.png" COMP;
+			image: "B03_Status_image02_bg.png" COMP;
+			image: "B03_Status_image01_bg.png" COMP;
 			image: "B03_Status_home_press_01.png" COMP;
 			image: "B03_Status_home_press_02.png" COMP;
 		}
@@ -125,8 +129,14 @@ collections {
 				mouse_events: 0;
 				description {
 					state: "default" 0.0;
-					rel1.to: "background";
-					rel2.to: "background";
+					rel1 {
+						relative: 0.0 0.0;
+						to: "background";
+					}
+					rel2 {
+						relative: 1.0 1.0;
+						to: "background";
+					}
 					color: 0 0 0 255;
 				}
 				description {
@@ -161,7 +171,7 @@ collections {
 					visible: 0;
 					rel1.to: "elm.rect.bg";
 					rel2.to: "elm.rect.bg";
-					image.normal: "B03_Status_notification_bg.png";
+					image.normal: "B03_Status_image02_bg.png";
 					image.border: 3 3 0 0;
 				}
 				description {
@@ -181,66 +191,11 @@ collections {
 					state: "transparent" 0.0;
 					inherit: "default" 0.0;
 					visible: 1;
-					image.normal: "B03_Status_transparent_bg.png";
+					image.normal: "B03_Status_image01_bg.png";
 					image.border: 3 3 0 0;
-				}
-			}
-#if 0
-			part {
-				name: "elm.rect.left_con";
-				type: IMAGE;
-				scale: 1;
-				mouse_events: 0;
-				description {
-					state: "default" 0.0;
-					min: HOME_PADDING_PORTRAIT HEIGHT;
-					visible: 1;
-//					image.normal: "B03_bg.png";
-					image.border: 3 3 0 0;
-					fixed: 1 1;
-					rel1 { relative: 0.0 0.0; to: "elm.rect.bg"; }
-					rel2 { relative: 0.0 0.0; to: "elm.rect.bg"; }
-					align: 0.0 0.0;
-				}
-				description {
-					state: "landscape" 0.0;
-					inherit: "default" 0.0;
-					min: HOME_PADDING_LANDSCAPE HEIGHT;
-				}
-				description {
-					state: "changeImage" 0.0;
-					inherit: "default" 0.0;
-					image.normal: "B03_bg_press.png";
-					image.border: 3 3 0 0;
-					visible: 1;
-				}
-				description {
-					state: "changeImage_landscape" 0.0;
-					inherit: "landscape" 0.0;
-					image.normal: "B03_bg_press.png";
-					image.border: 3 3 0 0;
-					visible: 1;
 				}
 			}
 
-			part {
-				name: "elm.rect.right_con";
-				type: IMAGE;
-				scale: 1;
-				mouse_events: 0;
-				description {
-					state: "default" 0.0;
-					min: 2 HEIGHT;
-					visible: 1;
-//					image.normal: "B03_bg.png";
-					image.border: 3 3 0 0;
-					fixed: 1 1;
-					rel1 { relative: 1.0 0.0; to: "elm.rect.left_con"; }
-					rel2 { relative: 1.0 0.0; to: "elm.rect.bg"; }
-					align: 0.0 0.0;
-				}
-			}
-#endif
 			part {
 				name: "elm.rect.left_con";
 				type: RECT;
@@ -263,7 +218,7 @@ collections {
 			}
 
 			part {
-				name: "elm.rect.right_con";
+				name: "icon_bg";
 				type: RECT;
 				scale: 1;
 				mouse_events: 0;
@@ -273,6 +228,150 @@ collections {
 					rel1 { relative: 1.0 0.0; to_x: "elm.rect.left_con"; }
 					rel2 { relative: 1.0 1.0; to: "elm.rect.bg"; }
 					align: 0.0 0.0;
+				}
+			}
+
+			part {
+				name: "elm.rect.right_con";
+				type: RECT;
+				scale: 1;
+				mouse_events: 0;
+				description {
+					state: "default" 0.0;
+					visible: 0;
+					rel1 { relative: 0.0 0.0; to: "icon_bg"; }
+					rel2 { relative: 1.0 1.0; to: "icon_bg"; }
+				}
+				description {
+					state: "show" 0.0;
+					inherit: "default" 0.0;
+				}
+				description {
+					state: "hide" 0.0;
+					inherit: "default" 0.0;
+					min: 0 INDICATOR_HEIGHT;
+					fixed: 0 1;
+					rel1 { relative: 0.0 0.0; to: "icon_bg"; }
+					rel2 { relative: 1.0 0.0; to: "icon_bg"; }
+					align: 0.0 1.0;
+				}
+
+			}
+
+			part {
+				name: "message.bg";
+				type: RECT;
+				scale: 1;
+				mouse_events: 0;
+				description {
+					state: "default" 0.0;
+					visible: 0;
+					min: 0 INDICATOR_HEIGHT;
+					fixed: 0 1;
+					rel1 { relative: 0.0 1.0; to: "elm.rect.right_con"; }
+					rel2 { relative: 1.0 1.0; to: "elm.rect.right_con"; }
+					align: 0.0 0.0;
+					visible: 0;
+				}
+			}
+
+			part {
+				name: "message.padding.left";
+				type: RECT;
+				scale: 1;
+				mouse_events: 0;
+				description {
+					state: "default" 0.0;
+					min: MESSAGE_PADDING 0;
+					fixed: 1 0;
+					rel1 {
+						relative: 0.0 0.0;
+						to: "message.bg";
+					}
+					rel2 {
+						relative: 0.0 1.0;
+						to: "message.bg";
+					}
+					align: 0.0 0.0;
+					visible: 0;
+				}
+			}
+			part {
+				name: "message.padding.right";
+				type: RECT;
+				scale: 1;
+				mouse_events: 0;
+				description {
+					state: "default" 0.0;
+					min: MESSAGE_PADDING 0;
+					fixed: 1 0;
+					rel1 {
+						relative: 1.0 0.0;
+						to: "message.bg";
+					}
+					rel2 {
+						relative: 1.0 1.0;
+						to: "message.bg";
+					}
+					align: 1.0 0.0;
+					visible: 0;
+				}
+			}
+			part {
+				name: "message.padding.top";
+				type: RECT;
+				scale: 1;
+				mouse_events: 0;
+				description {
+					state: "default" 0.0;
+					min: 0 INDICATOR_PADDING_H;
+					fixed: 0 1;
+					rel1 { relative: 0.0 0.0; to: "message.bg"; }
+					rel2 { relative: 1.0 0.0; to: "message.bg"; }
+					align: 0.0 0.0;
+					visible: 0;
+				}
+			}
+			part {
+				name: "message.padding.bottom";
+				type: RECT;
+				scale: 1;
+				mouse_events: 0;
+				description {
+					state: "default" 0.0;
+					min: 0 INDICATOR_PADDING_H;
+					fixed: 0 1;
+					rel1 { relative: 0.0 1.0; to: "message.bg"; }
+					rel2 { relative: 1.0 1.0; to: "message.bg"; }
+					align: 0.0 1.0;
+					visible: 0;
+				}
+
+			}
+			part {
+				name: "message.text";
+				type: TEXTBLOCK;
+				scale: 1;
+				mouse_events: 0;
+				description {
+					state: "default" 0.0;
+					fixed: 1 1;
+					visible: 1;
+					rel1 {
+						relative: 1.0 1.0;
+						to_x: "message.padding.left";
+						to_y: "message.bg";
+					}
+
+					rel2 {
+						relative: 0.0 0.0;
+						to_x: "message.padding.right";
+						to_y: "message.bg";
+					}
+					text {
+						style: "message_style";
+						min: 0 1;
+					}
 				}
 			}
 			part {
@@ -312,14 +411,6 @@ collections {
 				}
 			}
 
-
-			/* ICON_FIXED0(HOME) + PADDING_FIXED0(LEFT,FIXED PADDING) */
-			/* FIXED_RECT_FROM_LEFT( "elm.rect.fixed0", "padding.left", "elm.rect.left_con",
-									FIXED0_PADDING, INDI_DEFAULT_BG_COLOR, 0) */
-			/* DYNAMIC_RECT_FROM_LEFT( "elm.rect.fixed0", "padding.left", "elm.rect.left_con", FIXED0_PADDING, LANDSCAPE_FIXED0_PADDING, INDI_DEFAULT_BG_COLOR, 0) */
-			/* SWALLOW_PART_FROM_LEFT("elm.swallow.fixed0", "elm.rect.fixed0", "elm.rect.left_con",
-									DEFAULT_ICON_WIDTH, DEFAULT_ICON_HEIGHT) */
-			/* SWALLOW_PART_FROM_LEFT("elm.swallow.fixed0", "elm.rect.fixed0", "elm.rect.right_con", 180, DEFAULT_ICON_HEIGHT) */
 			part {
 				name: elm.swallow.fixed0;
 				type: SWALLOW;
@@ -345,16 +436,10 @@ collections {
 				}
 			}
 
-
-			/* PADDING_FIXED1 */
-			/* DYNAMIC_RECT_FROM_LEFT( "elm.rect.fixed1", "elm.swallow.fixed0", "elm.rect.left_con",
-									FIXED1_PADDING, LANDSCAPE_FIXED1_PADDING, INDI_DEFAULT_BG_COLOR, 0) */
-
 			/* Separator Padding */
 			part {
 				name: "separator.2";
 				type: RECT;
-				scale: 1;
 				mouse_events: 0;
 				description {
 					state: "default" 0.0;
@@ -395,7 +480,6 @@ collections {
 			part {
 				name: "separator.1";
 				type: RECT;
-				scale: 1;
 				mouse_events: 0;
 				description {
 					state: "default" 0.0;
@@ -434,19 +518,13 @@ collections {
 				}
 			}
 			FIXED_RECT_FROM_LEFT( "elm.rect.fixed2", "elm.swallow.fixed0", "elm.rect.right_con", FIXED2_PADDING, INDI_SEPARATOR_BG_COLOR, 0)
-			/* SWALLOW_PART_FROM_LEFT( "elm.swallow.separator", "elm.rect.fixed1", "elm.rect.right_con", FIXED2_PADDING, HEIGHT) */
-			/* FIXED_RECT_FROM_LEFT( "elm.rect.fixed2", "elm.swallow.fixed0", "elm.rect.right_con", FIXED2_PADDING, INDI_SEPARATOR_BG_COLOR, 1) */
-
-			/* NON_FIXED(R1~R10) */
-			/* SWALLOW_PART_FROM_RIGHT( "elm.swallow.nonfixed", "elm.swallow.fixed1", "elm.rect.right_con", DEFAULT_NON_FIXED_PADDING, 0) */
-			/* SWALLOW_PART_FROM_CENTER( "elm.swallow.nonfixed", "elm.rect.nonfixed0", "elm.swallow.fixed1", "elm.rect.right_con", DEFAULT_NON_FIXED_PADDING, 0) */
 
 			/* ICON_FIXED3(BATTERY) + PADDING_FIXED4(RIGHT,FIXED PADDING) */
 			FIXED_RECT_FROM_RIGHT( "elm.rect.fixed4", "clock.padding.left", "elm.rect.right_con", CLOCK_PADDING, INDI_DEFAULT_BG_COLOR, 0)
 			SWALLOW_PART_FROM_RIGHT( "elm.swallow.fixed3", "elm.rect.fixed4", "elm.rect.right_con", DEFAULT_ICON_WIDTH, DEFAULT_ICON_HEIGHT)
 
 			/* ICON_FIXED2(WIFI) + PADDING_NONFIXED1(RIGHT,DYNAMIC PADDING) */
-			DYNAMIC_RECT_FROM_RIGHT( "elm.rect.nonfixed1", "elm.swallow.fixed3", "elm.rect.right_con", DEFAULT_ICON_PADDING, FIXED4_DYNAMIC_PADDING,INDI_DYNAMIC_BG_COLOR, 0)
+			DYNAMIC_RECT_FROM_RIGHT( "elm.rect.nonfixed1", "elm.swallow.fixed3", "elm.rect.right_con", DEFAULT_ICON_PADDING, FIXED4_DYNAMIC_PADDING, INDI_DYNAMIC_BG_COLOR, 0)
 			SWALLOW_PART_FROM_RIGHT( "elm.swallow.fixed2", "elm.rect.nonfixed1", "elm.rect.right_con", DEFAULT_ICON_WIDTH, DEFAULT_ICON_HEIGHT )
 
 			/* ICON_FIXED1(RSSI) + PADDING_FIXED3(RIGHT, FIXED PADDING) */
@@ -482,8 +560,16 @@ collections {
 					state: "default" 0.0;
 					min: CLOCK_WIDTH INDICATOR_HEIGHT;
 					fixed: 1 1;
-					rel1.to_x: "padding.right";
-					rel2 { relative: 0.0 0.0; to_x: "padding.right"; }
+					rel1 {
+						relative: 0.0 0.0;
+						to_x: "padding.right";
+						to_y :"elm.rect.right_con";
+					}
+					rel2 {
+						relative: 0.0 0.0;
+						to_x: "padding.right";
+						to_y :"elm.rect.right_con";
+					}
 					align: 1.0 0.0;
 					visible: 0;
 				}
@@ -679,41 +765,7 @@ collections {
 					}
 				}
 			}
-#if 0
-			/* TODO: Should be removed */
-			program {
-				name: "change_bg_image_1";
-				action: STATE_SET "changeImage" 0.0;
-				signal: "change,bg,image,1";
-				source: "elm.rect.*";
-				script {
-					if (get_int(changebg) == 0) {
-						if(get_int(changeHomePad) == 0)
-						set_state(PART:"elm.rect.left_con", "changeImage", 0.0);
-						else
-							set_state(PART:"elm.rect.left_con", "changeImage_landscape", 0.0);
-						set_int(changebg,1);
-					}
-				}
-			}
 
-			/* TODO: Should be removed */
-			program {
-				name: "change_bg_image_2";
-				action: STATE_SET "default" 0.0;
-				signal: "change,bg,image,2";
-				source: "elm.rect.*";
-				script {
-					if (get_int(changebg) == 1) {
-						if (get_int(changeHomePad) == 0)
-						set_state(PART:"elm.rect.left_con", "default", 0.0);
-						else
-							set_state(PART:"elm.rect.left_con", "landscape", 0.0);
-						set_int(changebg, 0);
-					}
-				}
-			}
-#endif
 			program {
 				name: "home_pressed";
 				signal: "home.pressed";
@@ -771,6 +823,23 @@ collections {
 				}
 			}
 
+			program {
+				name: "message.show";
+				action: STATE_SET "hide" 0.0;
+				signal: "message.show";
+				source: "indicator.prog";
+				target: "elm.rect.right_con";
+				transition: LINEAR 0.3;
+			}
+
+			program {
+				name: "message.hide";
+				action: STATE_SET "show" 0.0;
+				signal: "message.hide";
+				source: "indicator.prog";
+				target: "elm.rect.right_con";
+				transition: LINEAR 0.3;
+			}
 
 			/*********************************************************
 			 *
@@ -835,21 +904,8 @@ collections {
 				}
 
 			}
+
 #if 0
-			/* TODO: Should be removed */
-			program {
-				name: "bg_visible";
-				action: STATE_SET "default" 0.0;
-				transition: LINEAR 0.5;
-				target: "elm.image.bg";
-			}
-			/* TODO: Should be removed */
-			program {
-				name: "bg_invisible";
-				action: STATE_SET "default" 0.0;
-				transition: LINEAR 0.5;
-				target: "elm.image.bg";
-			}
 			/* TODO: Should be removed */
 			program {
 				name: "stop_action";

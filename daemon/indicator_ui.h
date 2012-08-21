@@ -14,6 +14,7 @@
  * limitations under the License.
  */
 
+
 #ifndef __DEF_indicator_H_
 #define __DEF_indicator_H_
 
@@ -26,27 +27,27 @@
 #endif
 
 #if !defined(LOCALEDIR)
-#  define LOCALEDIR "/opt/apps/org.tizen.indicator/res/locale"
+#  define LOCALEDIR "/usr/apps/com.samsung.indicator/res/locale"
 #endif
 
 #if !defined(EDJDIR)
-#  define EDJDIR "/opt/apps/org.tizen.indicator/res/edje"
+#  define EDJDIR "/usr/apps/com.samsung.indicator/res/edje"
 #endif
 
 #if !defined(ICONDIR)
-#  define ICONDIR "/opt/apps/org.tizen.indicator/res/icons"
+#  define ICONDIR "/usr/apps/com.samsung.indicator/res/icons"
 #endif
 
-#define EDJ_FILE EDJDIR			"/" PACKAGE ".edj"
-#define ICON_THEME_FILE			EDJDIR "/" PACKAGE "_icon_theme.edj"
-#define ICON_NONFIXED_THEME_FILE			EDJDIR "/" PACKAGE "_icon_nonfixed_theme.edj"
+#define EDJ_FILE EDJDIR"/"PACKAGE".edj"
+#define ICON_THEME_FILE EDJDIR"/"PACKAGE"_icon_theme.edj"
+#define ICON_NONFIXED_THEME_FILE EDJDIR"/"PACKAGE"_icon_nonfixed_theme.edj"
 
-
-#define MENU_SCREEN_NAME		"org.tizen.menu-screen"
-#define LOCK_SCREEN_NAME		"org.tizen.idle-lock"
+#define HOME_SCREEN_NAME		"com.samsung.live-magazine"
+#define MENU_SCREEN_NAME		"com.samsung.menu-screen"
+#define LOCK_SCREEN_NAME		"com.samsung.idle-lock"
 #define QUICKPANEL_NAME			"E Popup"
-#define CALL_NAME			"org.tizen.call"
-#define VTCALL_NAME			"org.tizen.vtmain"
+#define CALL_NAME			"com.samsung.call"
+#define VTCALL_NAME			"com.samsung.vtmain"
 
 enum _win_type {
 	/* clock view */

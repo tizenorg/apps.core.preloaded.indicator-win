@@ -15,13 +15,15 @@
  */
 
 #include <stdio.h>
-#include <appcore-efl.h>
+#include <app.h>
 #include <Ecore_X.h>
 #include <vconf.h>
 #include <heynoti.h>
 #include <unistd.h>
-#include <aul.h>
 #include <privilege-control.h>
+#include <app_manager.h>
+#include <signal.h>
+
 
 #include "common.h"
 #include "indicator_box_util.h"
@@ -29,6 +31,7 @@
 #include "indicator_ui.h"
 #include "indicator_gui.h"
 #include "modules.h"
+#include "message.h"
 
 #define GRP_MAIN "indicator"
 
@@ -43,12 +46,14 @@
 #define TIMEOUT			5
 
 #ifdef HOME_KEY_EMULATION
-#include <utilX.h>
+//#include <utilX.h>
 
 /* predefine string */
 #define PROP_HWKEY_EMULATION "_HWKEY_EMULATION"
 #define KEY_MSG_PREFIX_PRESS "P:"
 #define KEY_MSG_PREFIX_RELEASE "R:"
+#define KEY_MSG_PREFIX_PRESS_C "PC"
+#define KEY_MSG_PREFIX_RELEASE_C "RC"
 
 #ifndef KEY_HOME
 #define KEY_HOME "XF86Phone"
@@ -56,6 +61,7 @@
 #endif /* HOME_KEY_EMULATION */
 
 static Eina_Bool home_button_pressed = EINA_FALSE;
+
 /******************************************************************************
  *
  * DEFINITAIONS: Static functions
@@ -73,15 +79,11 @@ static int check_system_status(void);
 static int indicator_window_new(void *data);
 static int indicator_window_del(void *data);
 
-static int show_quickpanel(void *data);
-static int hide_quickpanel(void *data);
-
-
 /* static callback functions */
 static void _indicator_check_battery_percent_on_cb(keynode_t *node, void *data);
-static int _indicator_low_bat_cb(void *data);
-static int _indicator_lang_changed_cb(void *data);
-static int _indicator_region_changed_cb(void *data);
+static void _indicator_low_bat_cb(void *data);
+static void _indicator_lang_changed_cb(void *data);
+static void _indicator_region_changed_cb(void *data);
 static void _indicator_hibernation_enter_cb(void *data);
 static void _indicator_hibernation_leave_cb(void *data);
 static void _indicator_window_delete_cb(void *data, Evas_Object * obj,
@@ -216,7 +218,7 @@ static char *_get_top_window_name(void *data)
 	Ecore_X_Window active;
 	static Eina_Strbuf *temp_buf = NULL;
 
-	char pkgname[PATH_MAX];
+	char *pkgname = NULL;
 	char *win_name = NULL;
 	char *ret_name = NULL;
 
@@ -249,7 +251,8 @@ static char *_get_top_window_name(void *data)
 
 	DBG("Window (0x%X) PID is %d", topwin, pid);
 
-	if (aul_app_get_pkgname_bypid(pid, &pkgname[0], PATH_MAX) != AUL_R_OK) {
+	if (app_manager_get_package(pid,&pkgname) != APP_MANAGER_ERROR_NONE)
+	{
 		/* if failed to get pkgname from menu DB,
 		 * check that it is quickpanel window or not */
 		if (ecore_x_netwm_name_get(active, &win_name) == EINA_FALSE)
@@ -264,6 +267,9 @@ static char *_get_top_window_name(void *data)
 	eina_strbuf_append_printf(temp_buf, "%s", pkgname);
 	ret_name = eina_strbuf_string_steal(temp_buf);
 	eina_strbuf_free(temp_buf);
+
+	if(pkgname != NULL)
+		free(pkgname);
 
 	return ret_name;
 }
@@ -288,7 +294,10 @@ static Eina_Bool _change_view(Ecore_X_Window win, void *data)
 					strlen(top_win_name))) {
 			type = TOP_WIN_QUICKPANEL;
 			ret = EINA_FALSE;
-		} else if (!strncmp(top_win_name, LOCK_SCREEN_NAME,
+		} else if (!strncmp(top_win_name, HOME_SCREEN_NAME,
+						strlen(top_win_name)))
+			type = TOP_WIN_HOME_SCREEN;
+		else if (!strncmp(top_win_name, LOCK_SCREEN_NAME,
 						strlen(top_win_name)))
 			type = TOP_WIN_LOCK_SCREEN;
 		else if (!strncmp(top_win_name, MENU_SCREEN_NAME,
@@ -314,47 +323,6 @@ static Eina_Bool _change_view(Ecore_X_Window win, void *data)
 	return EINA_TRUE;
 }
 
-static int show_quickpanel(void *data)
-{
-	struct appdata *ad = (struct appdata *)data;
-	Ecore_X_Window zone;
-
-	retif(data == NULL, FAIL, "Invalid parameter!");
-	retif(check_system_status(), FAIL, "Checking system status is failed!");
-#if !(UNLOCK_ENABLED)
-	if (ad->top_win == TOP_WIN_CALL)
-		return OK;
-#endif
-
-	zone = ecore_x_e_illume_zone_get(elm_win_xwindow_get(ad->win_main));
-
-	/* Request to show/hide quick panel windows */
-	ecore_x_e_illume_quickpanel_state_send(zone,
-			ECORE_X_ILLUME_QUICKPANEL_STATE_ON);
-
-	_change_top_win(TOP_WIN_QUICKPANEL, data);
-
-	return OK;
-}
-
-static int hide_quickpanel(void *data)
-{
-	struct appdata *ad = (struct appdata *)data;
-	Ecore_X_Window zone;
-
-	retif(data == NULL, FAIL, "Invalid parameter!");
-	retif(check_system_status(), FAIL, "Checking system status is failed!");
-
-	zone = ecore_x_e_illume_zone_get(elm_win_xwindow_get(ad->win_main));
-
-	/* Request to show/hide quick panel windows */
-	if (ad->top_win == TOP_WIN_QUICKPANEL) {
-		ecore_x_e_illume_quickpanel_state_send(zone,
-				ECORE_X_ILLUME_QUICKPANEL_STATE_OFF);
-	}
-	return OK;
-}
-
 /******************************************************************************
  *
  * callback functions
@@ -377,24 +345,21 @@ static void _indicator_check_battery_percent_on_cb(keynode_t *node, void *data)
 			VCONFKEY_SETAPPL_BATTERY_PERCENTAGE_BOOL);
 }
 
-static int _indicator_low_bat_cb(void *data)
+static void _indicator_low_bat_cb(void *data)
 {
 	INFO("LOW_BATTERY!");
-	return OK;
 }
 
-static int _indicator_lang_changed_cb(void *data)
+static void _indicator_lang_changed_cb(void *data)
 {
 	INFO("CHANGE LANGUAGE!");
 	indicator_lang_changed_modules(data);
-	return OK;
 }
 
-static int _indicator_region_changed_cb(void *data)
+static void _indicator_region_changed_cb(void *data)
 {
 	INFO("CHANGE REGION!");
 	indicator_region_changed_modules(data);
-	return OK;
 }
 
 static void _indicator_hibernation_enter_cb(void *data)
@@ -630,15 +595,6 @@ static void register_event_handler(void *data)
 				       EVAS_CALLBACK_MOUSE_UP,
 				       _indicator_mouse_up_cb, (void *)ad);
 
-	appcore_set_event_callback(APPCORE_EVENT_LOW_BATTERY,
-				   _indicator_low_bat_cb, NULL);
-
-	appcore_set_event_callback(APPCORE_EVENT_LANG_CHANGE,
-				   _indicator_lang_changed_cb, data);
-
-	appcore_set_event_callback(APPCORE_EVENT_REGION_CHANGE,
-				   _indicator_region_changed_cb, data);
-
 	ad->notifd = heynoti_init();
 	if (ad->notifd == -1) {
 		ERR("noti init is failed");
@@ -698,9 +654,6 @@ static int unregister_event_handler(void *data)
 
 	heynoti_close(ad->notifd);
 	ad->notifd = 0;
-
-	appcore_set_event_callback(APPCORE_EVENT_LOW_BATTERY, NULL, NULL);
-	appcore_set_event_callback(APPCORE_EVENT_LANG_CHANGE, NULL, NULL);
 
 	Ecore_Event_Handler *hdl = NULL;
 	EINA_LIST_FREE(ad->evt_handlers, hdl) {
@@ -843,6 +796,7 @@ static int indicator_window_del(void *data)
 	retif(data == NULL, FAIL, "Invalid parameter!");
 
 	indicator_fini_modules(data);
+	indicator_message_fini();
 	unregister_event_handler(ad);
 	indicator_util_layout_del(ad);
 	evas_image_cache_flush(ad->evas);
@@ -869,13 +823,27 @@ static int indicator_window_del(void *data)
  * Mouse event
  *
  *****************************************************************************/
-static Ecore_Timer *_timer = NULL;
-
-static Eina_Bool _timer_cb(void *data)
+static inline int _indicator_home_icon_action(void *data, int press)
 {
-	indicator_util_update_display(data);
-	_timer = NULL;
-	return ECORE_CALLBACK_CANCEL;
+	struct appdata *ad = NULL;
+	int ret = -1;
+	const char *signal = NULL;
+
+	retif(!data, ret, "data is NULL");
+	ad = data;
+	retif(!ad->layout_main, ret, "ad->layout_main is NULL");
+
+	if (press)
+		signal = "home.pressed";
+	else
+		signal = "home.released";
+
+	ret = vconf_set_int(VCONF_INDICATOR_HOME_PRESSED, !(!press));
+	if (!ret)
+		elm_object_signal_emit(ad->layout_main,
+				signal, "indicator.prog");
+
+	return ret;
 }
 
 #ifdef HOME_KEY_EMULATION
@@ -915,25 +883,67 @@ static Eina_Bool _indicator_hw_home_key_release(void *data)
 	return ecore_x_client_message8_send(ad->win_hwkey, ad->atom_hwkey,
 		message, strlen(message));
 }
+static Eina_Bool _indicator_hw_home_key_press_cancel(void *data)
+{
+	struct appdata *ad = NULL;
+	char message[20] = {'\0', };
+
+	retif(!data, EINA_FALSE, "data is NULL");
+
+	ad = data;
+
+	retif(!ad->win_hwkey, EINA_FALSE, "window for hw emulation is NULL");
+
+	snprintf(message, sizeof(message), "%s%s",
+			KEY_MSG_PREFIX_PRESS_C, KEY_HOME);
+
+	return ecore_x_client_message8_send(ad->win_hwkey, ad->atom_hwkey,
+		message, strlen(message));
+}
+
+static Eina_Bool _indicator_hw_home_key_release_cancel(void *data)
+{
+	struct appdata *ad = NULL;
+	char message[20] = {'\0', };
+
+	retif(!data, EINA_FALSE, "data is NULL");
+
+	ad = data;
+
+	retif(!ad->win_hwkey, EINA_FALSE, "window for hw emulation is NULL");
+
+
+	snprintf(message, sizeof(message), "%s%s",
+			KEY_MSG_PREFIX_RELEASE_C, KEY_HOME);
+
+	return ecore_x_client_message8_send(ad->win_hwkey, ad->atom_hwkey,
+		message, strlen(message));
+}
+
 #endif /* HOME_KEY_EMULATION */
 
 static void _indicator_mouse_down_cb(void *data, Evas * e, Evas_Object * obj,
 				     void *event)
 {
-	struct appdata *ad = (struct appdata *)data;
-	Evas_Event_Mouse_Down *ev = event;
-	int mouse_down_prio = -1;
-	int ret = -1;
-
-	Evas_Object *edje;
-
-	DBG("trigger: %d", ad->mouse_event.trigger);
+	struct appdata *ad = NULL;
+	Evas_Event_Mouse_Down *ev = NULL;
 
 	retif(data == NULL || event == NULL, , "Invalid parameter!");
+	ad = data;
+	ev = event;
 
 	ad->mouse_event.x = ev->canvas.x;
 	ad->mouse_event.y = ev->canvas.y;
 
+#ifdef HOME_KEY_EMULATION
+	if (!indicator_util_check_home_icon_area(ev->canvas.x, ev->canvas.y)) {
+		_indicator_home_icon_action(data, 1);
+		home_button_pressed = EINA_TRUE;
+		_indicator_hw_home_key_press(data);
+	}
+
+#else /* HOME_KEY_EMULATION */
+	int mouse_down_prio = -1;
 	mouse_down_prio =
 		indicator_util_get_priority_in_move_area(ad->mouse_event.x,
 							ad->mouse_event.y);
@@ -951,67 +961,64 @@ static void _indicator_mouse_down_cb(void *data, Evas * e, Evas_Object * obj,
 
 			if (lock_ret == 0
 				&& lock_state == VCONFKEY_IDLE_UNLOCK) {
-				home_button_pressed = EINA_TRUE;
-				ret = vconf_set_int(
-					VCONF_INDICATOR_HOME_PRESSED, 1);
-				INFO("Home Button was Pressed! %d", ret);
-
-				if (ret == 0) {
-					edje = elm_layout_edje_get(
-							ad->layout_main);
-					edje_object_signal_emit(edje,
-							"home.pressed",
-							"indicator.prog");
-				}
-#ifdef HOME_KEY_EMULATION
-				_indicator_hw_home_key_press(data);
-#endif /* HOME_KEY_EMULATION */
+				if (!_indicator_home_icon_action(data, 1))
+					home_button_pressed = EINA_TRUE;
 			}
 		}
 		break;
 		}
 	}
+#endif /* HOME_KEY_EMULATION */
 }
 
 static void _indicator_mouse_move_cb(void *data, Evas * e, Evas_Object * obj,
 				     void *event)
 {
 	struct appdata *ad = NULL;
+	Evas_Event_Mouse_Move *ev = NULL;
+
 	retif(data == NULL || event == NULL, , "Invalid parameter!");
 	ad = data;
+	ev = event;
 
-	DBG("trigger : %d x : %d y: %d", ad->mouse_event.trigger,
-			ad->mouse_event.x, ad->mouse_event.y);
-
-	/* Currently, We don't have to do in mouse_move_cb event cb */
+#ifdef HOME_KEY_EMULATION
+	if (home_button_pressed) {
+		if (indicator_util_check_home_icon_area(ev->cur.canvas.x,
+			ev->cur.canvas.y)) {
+			_indicator_home_icon_action(data, 0);
+			home_button_pressed = EINA_FALSE;
+			_indicator_hw_home_key_press_cancel(data);
+			DBG("cancel home key");
+		}
+	}
+#endif /* HOME_KEY_EMULATION */
 }
 
 static void _indicator_mouse_up_cb(void *data, Evas * e, Evas_Object * obj,
 				   void *event)
 {
-	struct appdata *ad = (struct appdata *)data;
-	Evas_Event_Mouse_Up *ev = event;
-	int ret = -1;
-	int mouse_up_prio = -1;
-	int mouse_down_prio = -1;
-	Evas_Object *edje;
+	struct appdata *ad = NULL;
+	Evas_Event_Mouse_Up *ev = NULL;
 
 	retif(data == NULL || event == NULL, , "Invalid parameter!");
+	ad = data;
+	ev = event;
 
-	DBG("trigger : %d", ad->mouse_event.trigger);
-
-	if (home_button_pressed == EINA_TRUE) {
-		ret = vconf_set_int(VCONF_INDICATOR_HOME_PRESSED, 0);
-		INFO("Home Button was Released! %d", ret);
-
-		if (ret == 0) {
-			edje = elm_layout_edje_get(ad->layout_main);
-			edje_object_signal_emit(edje, "home.released",
-					"indicator.prog");
-			home_button_pressed = EINA_FALSE;
-		}
+#ifdef HOME_KEY_EMULATION
+	if (home_button_pressed) {
+		_indicator_hw_home_key_release(data);
+		_indicator_home_icon_action(data, 0);
 	}
 
+	home_button_pressed = EINA_FALSE;
+#else /* HOME_REMOVE_LONGPRESS */
+	int mouse_up_prio = -1;
+	int mouse_down_prio = -1;
+
+	if (home_button_pressed == EINA_TRUE) {
+		_indicator_home_icon_action(data, 0);
+		home_button_pressed = EINA_FALSE;
+	}
 
 	mouse_down_prio =
 		indicator_util_get_priority_in_move_area(ad->mouse_event.x,
@@ -1029,14 +1036,11 @@ static void _indicator_mouse_up_cb(void *data, Evas * e, Evas_Object * obj,
 
 			lock_ret = vconf_get_int(VCONFKEY_IDLE_LOCK_STATE,
 					&lock_state);
-			DBG("Check Lock State : %d %d", ret, lock_state);
+			DBG("Check Lock State : %d %d", lock_ret, lock_state);
 
 			/* In Lock Screen, home button don't have to do */
 			if (lock_ret == 0 && lock_state == VCONFKEY_IDLE_LOCK)
 				break;
-#ifdef HOME_KEY_EMULATION
-			_indicator_hw_home_key_release(data);
-#else /* HOME_KEY_EMULATION */
 
 			char *package = NULL;
 			char *top_win_name = NULL;
@@ -1052,37 +1056,60 @@ static void _indicator_mouse_up_cb(void *data, Evas * e, Evas_Object * obj,
 				 * If top window sames to string of
 				 * package value,
 				 * Call aul_launch_app */
+				service_h service;
+				int ret = SERVICE_ERROR_NONE;
+
+				service_create(&service);
+
+				service_set_operation(service, SERVICE_OPERATION_DEFAULT);
+
+				service_set_package(service, package);
+
 				top_win_name = _get_top_window_name(data);
 
 				if (top_win_name != NULL
 					&& !strncmp(top_win_name, package,
-					strlen(package))) {
+					strlen(package)))
+				{
 
-					DBG("AUL_LAUNCH_APP : %s",
+					DBG("service_send_launch_request : %s",
 						top_win_name);
 
-					if (aul_launch_app(package, NULL) < 0)
+					// explicit launch without reply callback
+					ret = service_send_launch_request(service, NULL, NULL);
+
+					if(ret != SERVICE_ERROR_NONE)
+					{
 						ERR("Cannot launch app");
-				} else {
-					DBG("AUL_OPEN_APP : %s",
+					}
+
+				}
+				else
+				{
+					DBG("app_manager_resume_app : %s",
 						top_win_name);
 
-					if (aul_open_app(package) < 0)
-						ERR("Cannot open app");
+					ret = app_manager_resume_app(service);
+					if(ret != APP_MANAGER_ERROR_NONE)
+					{
+						ERR("Cannot resume app");
+					}
 				}
 
 				if (top_win_name)
 					free(top_win_name);
 
 				free(package);
+
+				service_destroy(service);
+
 			} else
 				ERR("Cannot get vconf");
-#endif /* HOME_KEY_EMULATION */
 		}
 		break;
 		}
 	}
-
+#endif /* HOME_KEY_EMULATION */
 	ad->mouse_event.x = 0;
 	ad->mouse_event.y = 0;
 }
@@ -1098,15 +1125,45 @@ static int register_indicator_modules(void *data)
 	return OK;
 }
 
+static void _signal_handler(int signum, siginfo_t *info, void *unused)
+{
+    DBG("_signal_handler : Terminated...");
+    app_efl_exit();
+}
+static void _heynoti_event_power_off(void *data)
+{
+    DBG("_heynoti_event_power_off : Terminated...");
+    app_efl_exit();
+}
+
+
 /******************************************************************************
  *
  * IMPLEMENTATIONS: appcore_ops functions
  *
  *****************************************************************************/
-static int app_create(void *data)
+static bool app_create(void *data)
 {
 	pid_t pid;
 	int ret;
+
+    // signal handler
+	struct sigaction act;
+	act.sa_sigaction = _signal_handler;
+	act.sa_flags = SA_SIGINFO;
+
+	ret = sigemptyset(&act.sa_mask);
+	if (ret < 0) {
+		ERR("Failed to sigemptyset[%s]", strerror(errno));
+	}
+	ret = sigaddset(&act.sa_mask, SIGTERM);
+	if (ret < 0) {
+		ERR("Failed to sigaddset[%s]", strerror(errno));
+	}
+	ret = sigaction(SIGTERM, &act, NULL);
+	if (ret < 0) {
+		ERR("Failed to sigaction[%s]", strerror(errno));
+	}
 
 	pid = setsid();
 	if (pid < 0)
@@ -1115,18 +1172,24 @@ static int app_create(void *data)
 	ret = control_privilege();
 	if (ret != 0) {
 		fprintf(stderr, "[INDICATOR] Failed to control privilege!");
-		return -1;
+		return false;
 	}
 
 	ret = nice(2);
 	if (ret == -1)
 		ERR("Failed to set nice value!");
-	return 0;
+	return true;
 }
 
-static int app_terminate(void *data)
+static void app_terminate(void *data)
 {
 	struct appdata *ad = data;
+
+	indicator_fini_modules(data);
+	indicator_message_fini();
+	unregister_event_handler(ad);
+	indicator_util_layout_del(ad);
+	evas_image_cache_flush(ad->evas);
 
 	if (ad->layout_main)
 		evas_object_del(ad->layout_main);
@@ -1135,20 +1198,20 @@ static int app_terminate(void *data)
 		evas_object_del(ad->win_main);
 
 	INFO(" >>>>>>>>>>>>> INDICATOR IS TERMINATED!! <<<<<<<<<<<<<< ");
-	return 0;
+
 }
 
-static int app_pause(void *data)
+static void app_pause(void *data)
 {
-	return 0;
+
 }
 
-static int app_resume(void *data)
+static void app_resume(void *data)
 {
-	return 0;
+
 }
 
-static int app_reset(bundle *b, void *data)
+static void app_service(service_h service, void *data)
 {
 	struct appdata *ad = data;
 	int ret;
@@ -1157,11 +1220,6 @@ static int app_reset(bundle *b, void *data)
 	ret = indicator_window_new(data);
 	retif(ret != OK, FAIL, "Failed to create a new window!");
 
-	/* init internationalization */
-	ret = appcore_set_i18n(PACKAGE, LOCALEDIR);
-	if (ret)
-		return -1;
-
 	/* change view */
 	_change_view(ecore_x_window_root_first_get(), data);
 
@@ -1169,29 +1227,47 @@ static int app_reset(bundle *b, void *data)
 	_indicator_check_battery_percent_on_cb(NULL, data);
 	register_indicator_modules(data);
 
+	indicator_message_init(data);
+
 	if (ad->win_main)
 		elm_win_activate(ad->win_main);
 
-	return 0;
 }
 
 int main(int argc, char *argv[])
 {
-	struct appdata *ad = NULL;
-	struct appcore_ops ops = {
-		.create = app_create,
-		.terminate = app_terminate,
-		.pause = app_pause,
-		.resume = app_resume,
-		.reset = app_reset,
-	};
 
-	ad = malloc(sizeof(struct appdata));
+	struct appdata ad;
 
-	retif(ad == NULL, FAIL, "Failt to allocate memory for appdata!");
+	app_event_callback_s event_callback;
 
-	memset(ad, 0x0, sizeof(struct appdata));
-	ops.data = ad;
+    int heyfd = heynoti_init();
+	if (heyfd < 0) {
+		ERR("Failed to heynoti_init[%d]", heyfd);
+	}
 
-	return appcore_efl_main(PACKAGE, &argc, &argv, &ops);
+	int ret = heynoti_subscribe(heyfd, "power_off_start", _heynoti_event_power_off, NULL);
+	if (ret < 0) {
+		ERR("Failed to heynoti_subscribe[%d]", ret);
+	}
+	ret = heynoti_attach_handler(heyfd);
+	if (ret < 0) {
+		ERR("Failed to heynoti_attach_handler[%d]", ret);
+	}
+
+	event_callback.create = app_create;
+	event_callback.terminate = app_terminate;
+	event_callback.pause = app_pause;
+	event_callback.resume = app_resume;
+	event_callback.service = app_service;
+	event_callback.low_memory = NULL;
+	event_callback.low_battery = _indicator_low_bat_cb;
+	event_callback.device_orientation = NULL;
+	event_callback.language_changed = _indicator_lang_changed_cb;
+	event_callback.region_format_changed = _indicator_region_changed_cb;
+
+	memset(&ad, 0x0, sizeof(struct appdata));
+
+	return app_efl_main(&argc, &argv, &event_callback, &ad);
+
 }

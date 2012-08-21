@@ -14,10 +14,10 @@
  * limitations under the License.
  */
 
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <vconf.h>
-#include <appcore-efl.h>
 #include "common.h"
 #include "indicator.h"
 #include "indicator_icon_util.h"
@@ -63,12 +63,25 @@ static void indicator_usb_change_cb(keynode_t *node, void *data)
 	ret = vconf_get_int(VCONFKEY_SYSMAN_USB_STATUS, &status);
 	if (ret == OK) {
 		if (status >= VCONFKEY_SYSMAN_USB_CONNECTED) {
-			INFO("CONNECTION USB Status: %d", status);
+			INFO("indicator_usb_change_cb : CONNECTION USB Status: %d", status);
 			usb.img_obj.data = icon_path[0];
 			indicator_util_icon_show(&usb);
 			return;
-		} else
-			indicator_util_icon_hide(&usb);
+		}
+		else
+		{
+			/* Second, check usb Host status */
+			ret = vconf_get_int(VCONFKEY_SYSMAN_USB_HOST_STATUS, &status);
+			if (ret == OK) {
+				if (status >= VCONFKEY_SYSMEN_USB_HOST_CONNECTED) {
+					INFO("indicator_usb_change_cb : Host USB Status: %d", status);
+					usb.img_obj.data = icon_path[0];
+					indicator_util_icon_show(&usb);
+					return;
+				} else
+					indicator_util_icon_hide(&usb);
+			}
+		}
 	}
 
 	return;
@@ -76,18 +89,31 @@ static void indicator_usb_change_cb(keynode_t *node, void *data)
 
 static int register_usb_module(void *data)
 {
-	int ret;
+	int r = 0, ret = -1;
 
 	retif(data == NULL, FAIL, "Invalid parameter!");
 
 	ret = vconf_notify_key_changed(VCONFKEY_SYSMAN_USB_STATUS,
 				       indicator_usb_change_cb, data);
 	if (ret != OK)
-		ERR("Failed to register callback!");
+	{
+		ERR("Failed to register callback(VCONFKEY_SYSMAN_USB_STATUS)!");
+		r = ret;
+	}
+
+
+	ret = vconf_notify_key_changed(VCONFKEY_SYSMAN_USB_HOST_STATUS,
+				       indicator_usb_change_cb, data);
+	if (ret != OK)
+	{
+		ERR("Failed to register callback(VCONFKEY_SYSMAN_USB_HOST_STATUS)!");
+		r = r|ret;
+	}
+
 
 	indicator_usb_change_cb(NULL, data);
 
-	return ret;
+	return r;
 }
 
 static int unregister_usb_module(void)
@@ -97,7 +123,12 @@ static int unregister_usb_module(void)
 	ret = vconf_ignore_key_changed(VCONFKEY_SYSMAN_USB_STATUS,
 				       indicator_usb_change_cb);
 	if (ret != OK)
-		ERR("Failed to unregister callback!");
+		ERR("Failed to unregister callback(VCONFKEY_SYSMAN_USB_STATUS)!");
+
+	ret = vconf_ignore_key_changed(VCONFKEY_SYSMAN_USB_HOST_STATUS,
+				       indicator_usb_change_cb);
+	if (ret != OK)
+		ERR("Failed to unregister callback(VCONFKEY_SYSMAN_USB_HOST_STATUS)!");
 
 	indicator_util_icon_hide(&usb);
 

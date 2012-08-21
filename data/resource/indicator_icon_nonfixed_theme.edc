@@ -47,7 +47,7 @@ collections {
 			}
 
 			PART_SWALLOW_SET( "elm.swallow.icon", "padding.left", "padding.right" )
-			
+
 			part {
 				name: "padding.right";
 				type: RECT;

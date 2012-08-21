@@ -14,10 +14,10 @@
  * limitations under the License.
  */
 
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <vconf.h>
-#include <appcore-efl.h>
 #include "common.h"
 #include "indicator.h"
 #include "indicator_icon_util.h"
@@ -81,8 +81,10 @@ static Eina_Bool dnet_transferring = EINA_FALSE;
 
 static void indicator_conn_change_cb(keynode_t *node, void *data)
 {
-	int svc_type, status;
-	int ret;
+	int svc_type = VCONFKEY_TELEPHONY_SVCTYPE_NONE;
+	int status = 0;
+	int ret = 0;
+	int ps_type = VCONFKEY_TELEPHONY_PSTYPE_NONE;
 
 	retif(data == NULL, , "Invalid parameter!");
 
@@ -114,6 +116,23 @@ static void indicator_conn_change_cb(keynode_t *node, void *data)
 				hide_trnsfr_icon();
 				dnet_transferring = EINA_FALSE;
 			}
+		}
+	}
+
+	ret = vconf_get_int(VCONFKEY_TELEPHONY_PSTYPE, &ps_type);
+	if (ret == OK) {
+		INFO("Telephony packet service type: %d", ps_type);
+
+		switch (ps_type) {
+		case VCONFKEY_TELEPHONY_PSTYPE_HSDPA:
+		case VCONFKEY_TELEPHONY_PSTYPE_HSUPA:
+		case VCONFKEY_TELEPHONY_PSTYPE_HSPA:
+			conn.img_obj.data = icon_path[LEVEL_HS];
+			indicator_util_icon_show(&conn);
+			return;
+		case VCONFKEY_TELEPHONY_PSTYPE_NONE:
+		default:
+			break;
 		}
 	}
 
@@ -149,10 +168,12 @@ static void indicator_conn_change_cb(keynode_t *node, void *data)
 			indicator_util_icon_hide(&conn);
 			break;
 		}
+
 		return;
 	}
 
 	indicator_util_icon_hide(&conn);
+
 	return;
 }
 
@@ -170,6 +191,13 @@ static int register_conn_module(void *data)
 	}
 
 	ret = vconf_notify_key_changed(VCONFKEY_DNET_STATE,
+				       indicator_conn_change_cb, data);
+	if (ret != OK) {
+		ERR("Failed to register callback!");
+		r = r | ret;
+	}
+
+	ret = vconf_notify_key_changed(VCONFKEY_TELEPHONY_PSTYPE,
 				       indicator_conn_change_cb, data);
 	if (ret != OK) {
 		ERR("Failed to register callback!");

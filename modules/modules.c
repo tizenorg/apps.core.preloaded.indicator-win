@@ -14,6 +14,7 @@
  * limitations under the License.
  */
 
+
 #include "modules.h"
 
 /* Home */
@@ -31,6 +32,7 @@ extern Indicator_Icon_Object conn;
 
 /* Processing */
 extern Indicator_Icon_Object trnsfr;
+extern Indicator_Icon_Object sos;
 extern Indicator_Icon_Object call;
 extern Indicator_Icon_Object call_divert;
 extern Indicator_Icon_Object active_sync;
@@ -72,6 +74,9 @@ extern Indicator_Icon_Object sysclock;
 /* Power */
 extern Indicator_Icon_Object battery;
 
+/* Smart stay */
+extern Indicator_Icon_Object smart_stay;
+
 static Indicator_Icon_Object *modules[] = {
 	/* Home */
 	&home,
@@ -79,6 +84,7 @@ static Indicator_Icon_Object *modules[] = {
 	&rssi,
 	&roaming,
 	/* Connection */
+	&sos,
 	&usb,
 	&wifi,
 	&mobile_hotspot,
@@ -88,8 +94,8 @@ static Indicator_Icon_Object *modules[] = {
 	&call,
 	&call_divert,
 
-	/* 
-	   &active_sync, 
+	/*
+	&active_sync,
 	 */
 
 	/* Information */
@@ -114,6 +120,8 @@ static Indicator_Icon_Object *modules[] = {
 	&sysclock,
 	/* Power */
 	&battery,
+	/*Smart Stay*/
+    &smart_stay,
 /* Add your module object here */
 	NULL
 };

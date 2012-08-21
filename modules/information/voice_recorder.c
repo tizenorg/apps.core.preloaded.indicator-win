@@ -14,10 +14,10 @@
  * limitations under the License.
  */
 
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <vconf.h>
-#include <appcore-efl.h>
 #include "common.h"
 #include "indicator.h"
 #include "indicator_icon_util.h"
@@ -50,7 +50,7 @@ enum {
 };
 
 static char *icon_path[] = {
-	"Background_playing/B03_Backgroundplaying_Voicerecording.png",
+	"Background_playing/B03_Backgroundplaying_voicerecorder_Recording.png",
 	"Background_playing/B03_Backgroundplaying_voicerecorder_paused.png",
 	NULL
 };

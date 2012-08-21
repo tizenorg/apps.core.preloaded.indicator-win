@@ -9,13 +9,15 @@ SET(VENDOR "tizen")
 SET(PACKAGE ${PROJECT_NAME})
 SET(PKGNAME "org.${VENDOR}.${PACKAGE}")
 SET(PREFIX ${CMAKE_INSTALL_PREFIX})
+SET(PREFIXRW ${CMAKE_INSTALL_PREFIXRW})
 SET(BINDIR "${PREFIX}/bin")
 SET(RESDIR "${PREFIX}/res")
-SET(DATADIR "${PREFIX}/data")
+SET(DATADIR "${PREFIXRW}/data")
 SET(LOCALEDIR "${RESDIR}/locale")
 SET(ICONDIR "${RESDIR}/icons")
 SET(EDJDIR "${RESDIR}/edje")
 SET(DESKTOPDIR "/usr/share/applications")
+SET(MANIFESTXMLDIR "/usr/share/packages")
 
 AUX_SOURCE_DIRECTORY(${CMAKE_CURRENT_SOURCE_DIR}/daemon DAEMON_SRCS)
 AUX_SOURCE_DIRECTORY(${CMAKE_CURRENT_SOURCE_DIR}/test TEST_SRCS)
@@ -34,20 +36,26 @@ SET(CMAKE_SKIP_BUILD_RPATH TRUE)
 
 INCLUDE(FindPkgConfig)
 pkg_check_modules(pkgs REQUIRED
-	appcore-efl
+	capi-appfw-application
+	capi-appfw-app-manager
+	capi-system-runtime-info
 	dlog
 	ecore
 	ecore-x
+	ecore-evas
+	ecore-file
 	edbus
 	edje
 	elementary
 	evas
 	eina
+	fontconfig
 	heynoti
 	libprivilege-control
 	notification
 	vconf
 	utilX
+	status-monitor
 )
 
 FOREACH(flag ${pkgs_CFLAGS})
@@ -70,7 +78,7 @@ ADD_DEFINITIONS("-DDATADIR=\"${DATADIR}\"")
 ADD_DEFINITIONS("-DLOCALEDIR=\"${LOCALEDIR}\"")
 ADD_DEFINITIONS("-DICONDIR=\"${ICONDIR}\"")
 ADD_DEFINITIONS("-DEDJDIR=\"${EDJDIR}\"")
-#ADD_DEFINITIONS("-DHOME_KEY_EMULATION")
+ADD_DEFINITIONS("-DHOME_KEY_EMULATION")
 ADD_DEFINITIONS("-DINDICATOR_SUPPORT_OPACITY_MODE")
 #ADD_DEFINITIONS("-DFILE_DEBUG")
 ADD_DEFINITIONS("-D_DLOG_USED")

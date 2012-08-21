@@ -14,9 +14,9 @@
  * limitations under the License.
  */
 
+
 #include <stdio.h>
 #include <stdlib.h>
-#include <appcore-efl.h>
 #include <notification.h>
 #include "common.h"
 #include "indicator.h"
@@ -260,10 +260,69 @@ void update_noti_module_new(void *data, notification_type_e type)
 }
 
 
+static int _indicator_check_first_start(void)
+{
+	int status = 0;
+	int ret = 0;
+
+	ret = vconf_get_bool(VCONFKEY_INDICATOR_STARTED, &status);
+	if (ret) {
+		INFO("fail to get %s", VCONFKEY_INDICATOR_STARTED);
+		/* reboot */
+		ret = vconf_set_bool(VCONFKEY_INDICATOR_STARTED, 1);
+		INFO("set : %s, result : %d", VCONFKEY_INDICATOR_STARTED, ret);
+	}
+
+	if (status)
+		return 0;
+
+	return 1;
+}
+
+static void _indicator_noti_delete_volatile_data(void)
+{
+	notification_list_h noti_list = NULL;
+	notification_list_h noti_list_head = NULL;
+	notification_h noti = NULL;
+	int property = 0;
+
+	notification_get_grouping_list(NOTIFICATION_TYPE_NONE, -1, &noti_list);
+
+	noti_list_head = noti_list;
+
+	while (noti_list != NULL) {
+		noti = notification_list_get_data(noti_list);
+		notification_get_property(noti, &property);
+
+		if (property & NOTIFICATION_PROP_VOLATILE_DISPLAY) {
+			notification_set_property(noti,
+				property |
+				NOTIFICATION_PROP_DISABLE_UPDATE_ON_DELETE);
+			notification_delete(noti);
+		}
+
+		noti_list = notification_list_get_next(noti_list);
+	}
+
+	notification_free_list(noti_list_head);
+
+	notification_update(NULL);
+}
+
+
 static int register_noti_module(void *data)
 {
+
 	retif(data == NULL, FAIL, "Invalid parameter!");
 	notification_error_e ret = NOTIFICATION_ERROR_NONE;
+	int is_first = 0;
+
+	is_first = _indicator_check_first_start();
+	{
+		/* Remove ongoing and volatile noti data */
+		notifiation_clear(NOTIFICATION_TYPE_ONGOING);
+		_indicator_noti_delete_volatile_data();
+	}
 
 	ret = notification_resister_changed_cb(update_noti_module_new, data);
 
@@ -311,3 +370,4 @@ static int hib_leave_noti_module(void *data)
 	update_noti_module_new(data, NOTIFICATION_TYPE_NOTI);
 	return OK;
 }
+

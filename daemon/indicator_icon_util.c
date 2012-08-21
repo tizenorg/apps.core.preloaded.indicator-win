@@ -13,7 +13,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#include <appcore-efl.h>
+
+
 #include <Eina.h>
 #include "common.h"
 #include "indicator_box_util.h"

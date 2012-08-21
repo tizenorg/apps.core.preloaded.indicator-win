@@ -14,6 +14,7 @@
  * limitations under the License.
  */
 
+
 #ifndef __INDICATOR_GUI_H__
 #define __INDICATOR_GUI_H__
 
@@ -36,6 +37,8 @@
 #define ICON_WIDTH		   38
 #define DEFAULT_ICON_HEIGHT	38
 #define DEFAULT_ICON_WIDTH	38
+
+#define MESSAGE_PADDING 10
 
 #define NONFIXED_DEFAULT_PADDING 25
 #define NONFIXED_DYNAMIC_PADDING 11

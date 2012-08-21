@@ -14,6 +14,7 @@
  * limitations under the License.
  */
 
+
 #ifndef __INDICATOR_ICON_LIST_H__
 #define __INDICATOR_ICON_LIST_H__
 

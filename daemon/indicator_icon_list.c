@@ -13,13 +13,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
+
 #include "common.h"
 #include "indicator.h"
 #include "indicator_icon_list.h"
 #include "indicator_icon_util.h"
 
-static Eina_List *icon_list;
-static Eina_List *nonfixed_icon_list;
+static Eina_List *icon_list = NULL;
+static Eina_List *nonfixed_icon_list = NULL;
 
 void indicator_icon_object_free(Indicator_Icon_Object *icon)
 {
@@ -34,7 +36,6 @@ void indicator_icon_object_free(Indicator_Icon_Object *icon)
 				icon->img_obj.obj = NULL;
 			}
 		}
-		free(icon);
 	}
 }
 
@@ -53,6 +54,7 @@ int indicator_icon_list_free(void)
 			return FAIL;
 	}
 	eina_list_free(icon_list);
+	icon_list = NULL;
 	return eina_error_get();
 }
 

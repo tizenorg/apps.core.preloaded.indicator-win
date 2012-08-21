@@ -16,7 +16,6 @@
 
 #include <stdio.h>
 #include <stdlib.h>
-#include <appcore-efl.h>
 
 #include "common.h"
 #include "indicator_icon_util.h"

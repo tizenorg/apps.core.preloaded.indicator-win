@@ -12,9 +12,12 @@
 CFLAGS ?= -Wall -g
 CXXFLAGS ?=  -Wall -g
 LDFLAGS ?= 
-PREFIX ?= /opt/apps/org.tizen.indicator
+VENDOR ?= tizen
+PROJECT_NAME ?= indicator
+PREFIX ?= /usr/apps/org.$(VENDOR).$(PROJECT_NAME)
+PREFIXRW ?= /opt/apps/org.$(VENDOR).$(PROJECT_NAME)
 RESDIR ?= $(PREFIX)/res
-DATADIR ?= $(PREFIX)/data
+DATADIR ?= $(PREFIXRW)/data
 
 ifneq (,$(findstring noopt,$(DEB_BUILD_OPTIONS)))
 	CFLAGS += -O0
@@ -33,7 +36,7 @@ configure-stamp:
 	dh_testdir
 	# Add here commands to configure the package.
 	mkdir -p $(CMAKE_BUILD_DIR) && cd $(CMAKE_BUILD_DIR) && \
-	CFLAGS="$(CFLAGS)" CXXFLAGS="$(CXXFLAGS)" LDFLAGS="$(LDFLAGS)" cmake .. -DCMAKE_INSTALL_PREFIX=$(PREFIX)
+	CFLAGS="$(CFLAGS)" CXXFLAGS="$(CXXFLAGS)" LDFLAGS="$(LDFLAGS)" cmake .. -DCMAKE_INSTALL_PREFIX=$(PREFIX) -DCMAKE_INSTALL_PREFIXRW=$(PREFIXRW)
 
 	touch configure-stamp
 
@@ -48,6 +51,8 @@ build-stamp: configure-stamp
 
 	for f in `find $(CURDIR)/debian/ -name "*.in"`; do \
 		cat $$f > $${f%.in}; \
+		sed -i -e "s#@VENDOR@#$(VENDOR)#g" $${f%.in}; \
+		sed -i -e "s#@PROJECT_NAME@#$(PROJECT_NAME)#g" $${f%.in}; \
 		sed -i -e "s#@PREFIX@#$(PREFIX)#g" $${f%.in}; \
 		sed -i -e "s#@RESDIR@#$(RESDIR)#g" $${f%.in}; \
 		sed -i -e "s#@DATADIR@#$(DATADIR)#g" $${f%.in}; \

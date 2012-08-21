@@ -14,10 +14,10 @@
  * limitations under the License.
  */
 
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <vconf.h>
-#include <appcore-efl.h>
 #include "common.h"
 #include "indicator.h"
 #include "indicator_icon_util.h"
@@ -46,6 +46,8 @@ Indicator_Icon_Object wifi_direct = {
 	.init = register_wifi_direct_module,
 	.fini = unregister_wifi_direct_module,
 };
+
+static Eina_Bool wifi_direct_transferring = EINA_FALSE;
 
 enum {
 	WIFI_DIRECT_ACTIVATE = 0,
@@ -118,6 +120,42 @@ static void indicator_wifi_direct_change_cb(keynode_t *node, void *data)
 	return;
 }
 
+
+static void
+indicator_wifi_direct_transfer_change_cb(keynode_t *node, void *data)
+{
+	int status;
+	int ret;
+
+	retif(data == NULL, , "Invalid parameter!");
+
+	ret = vconf_get_int(VCONFKEY_WIFI_DIRECT_TRANSFER_STATE, &status);
+
+	if (ret == OK) {
+		INFO("wifi_direct transferring STATUS: %d", status);
+		switch (status) {
+		case VCONFKEY_WIFI_DIRECT_TRANSFER_START:
+			if (wifi_direct_transferring != EINA_TRUE) {
+				show_trnsfr_icon(data);
+				wifi_direct_transferring = EINA_TRUE;
+			}
+			break;
+		case VCONFKEY_WIFI_DIRECT_TRANSFER_FAIL:
+			if (wifi_direct_transferring == EINA_TRUE) {
+				hide_trnsfr_icon();
+				wifi_direct_transferring = EINA_FALSE;
+			}
+			break;
+		case VCONFKEY_WIFI_DIRECT_TRANSFER_FINISH:
+			if (wifi_direct_transferring == EINA_TRUE) {
+				hide_trnsfr_icon();
+				wifi_direct_transferring = EINA_FALSE;
+			}
+			break;
+		}
+	}
+}
+
 static int register_wifi_direct_module(void *data)
 {
 	int ret;
@@ -130,7 +168,11 @@ static int register_wifi_direct_module(void *data)
 		ERR("Failed to register callback! : %s",
 			VCONFKEY_WIFI_DIRECT_STATE);
 
+	ret = vconf_notify_key_changed(VCONFKEY_WIFI_DIRECT_TRANSFER_STATE,
+			       indicator_wifi_direct_transfer_change_cb, data);
+
 	indicator_wifi_direct_change_cb(NULL, data);
+	indicator_wifi_direct_transfer_change_cb(NULL, data);
 
 	return ret;
 }
@@ -143,6 +185,16 @@ static int unregister_wifi_direct_module(void)
 				       indicator_wifi_direct_change_cb);
 	if (ret != OK)
 		ERR("Failed to unregister callback!");
+
+	ret = vconf_ignore_key_changed(VCONFKEY_WIFI_DIRECT_TRANSFER_STATE,
+			       indicator_wifi_direct_transfer_change_cb);
+	if (ret != OK)
+		ERR("Failed to unregister callback!");
+
+	if (wifi_direct_transferring == EINA_TRUE) {
+		hide_trnsfr_icon();
+		wifi_direct_transferring = EINA_FALSE;
+}
 
 	hide_icon();
 

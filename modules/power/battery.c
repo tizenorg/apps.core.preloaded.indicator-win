@@ -14,10 +14,10 @@
  * limitations under the License.
  */
 
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <vconf.h>
-#include <appcore-efl.h>
 #include "common.h"
 #include "indicator.h"
 #include "indicator_ui.h"
@@ -165,6 +165,7 @@ static const char *fuel_guage_charging_icon_path[FUEL_GAUGE_LV_NUM] = {
 
 struct battery_level_info {
 	int current_level;
+	int current_capa;
 	int min_level;
 	int max_level;
 	const char **icon_path;
@@ -176,13 +177,16 @@ static Ecore_Timer *timer;
 static int battery_level_type = BATTERY_LEVEL_20;
 static Eina_Bool battery_percentage_on = EINA_FALSE;
 static Eina_Bool battery_charging = EINA_FALSE;
+static int aniIndex = -1;
+
 
 static void indicator_battery_level_init(void)
 {
 	/* Currently, kernel not support level 6, So We use only level 20 */
 	battery_level_type = BATTERY_LEVEL_20;
 	_level.min_level = FUEL_GAUGE_LV_MIN;
-	_level.current_level = FUEL_GAUGE_LV_MIN;
+	_level.current_level = -1;
+	_level.current_capa = -1;
 	_level.max_level = FUEL_GAUGE_LV_MAX;
 	_level.icon_path = fuel_guage_icon_path;
 	_level.charing_icon_path = fuel_guage_charging_icon_path;
@@ -196,78 +200,37 @@ static void delete_timer(void)
 	}
 }
 
-static int level_check(int capacity)
+static int __battery_capa_to_level(int capacity)
 {
+	int level = 0;
+
 	if (battery_level_type == BATTERY_LEVEL_20) {
-		if (capacity < 0)
-			_level.current_level = FUEL_GAUGE_LV_MIN;
-		else if (capacity > 100)
-			_level.current_level = FUEL_GAUGE_LV_MAX;
-		else if (capacity >= 98)
-			_level.current_level = FUEL_GAUGE_LV_20;
-		else if (capacity >= 93)
-			_level.current_level = FUEL_GAUGE_LV_19;
-		else if (capacity >= 88)
-			_level.current_level = FUEL_GAUGE_LV_18;
-		else if (capacity >= 83)
-			_level.current_level = FUEL_GAUGE_LV_17;
-		else if (capacity >= 78)
-			_level.current_level = FUEL_GAUGE_LV_16;
-		else if (capacity >= 73)
-			_level.current_level = FUEL_GAUGE_LV_15;
-		else if (capacity >= 68)
-			_level.current_level = FUEL_GAUGE_LV_14;
-		else if (capacity >= 63)
-			_level.current_level = FUEL_GAUGE_LV_13;
-		else if (capacity >= 58)
-			_level.current_level = FUEL_GAUGE_LV_12;
-		else if (capacity >= 53)
-			_level.current_level = FUEL_GAUGE_LV_11;
-		else if (capacity >= 48)
-			_level.current_level = FUEL_GAUGE_LV_10;
-		else if (capacity >= 43)
-			_level.current_level = FUEL_GAUGE_LV_9;
-		else if (capacity >= 38)
-			_level.current_level = FUEL_GAUGE_LV_8;
-		else if (capacity >= 33)
-			_level.current_level = FUEL_GAUGE_LV_7;
-		else if (capacity >= 28)
-			_level.current_level = FUEL_GAUGE_LV_6;
-		else if (capacity >= 23)
-			_level.current_level = FUEL_GAUGE_LV_5;
-		else if (capacity >= 18)
-			_level.current_level = FUEL_GAUGE_LV_4;
-		else if (capacity >= 13)
-			_level.current_level = FUEL_GAUGE_LV_3;
-		else if (capacity >= 8)
-			_level.current_level = FUEL_GAUGE_LV_2;
-		else if (capacity >= 3)
-			_level.current_level = FUEL_GAUGE_LV_1;
-		else if (capacity >= 1)
-			_level.current_level = FUEL_GAUGE_LV_0;
-	} else {
-		if (capacity < 0)
-			_level.current_level = LEVEL_MIN;
-		else if (capacity > 100)
-			_level.current_level = LEVEL_MAX;
-		else if (capacity >= 80)
-			_level.current_level = LEVEL_6;
-		else if (capacity >= 60)
-			_level.current_level = LEVEL_5;
-		else if (capacity >= 40)
-			_level.current_level = LEVEL_4;
-		else if (capacity >= 25)
-			_level.current_level = LEVEL_3;
-		else if (capacity >= 15)
-			_level.current_level = LEVEL_2;
-		else if (capacity >= 5)
-			_level.current_level = LEVEL_1;
+		if (capacity >= 100)
+			level = FUEL_GAUGE_LV_MAX;
+		else if (capacity < 3)
+			level = FUEL_GAUGE_LV_0;
 		else
-			_level.current_level = LEVEL_0;
-		return 1;
+			level = (int)((capacity + 2) / 5);
+	} else {
+		if (capacity > 100)
+			level = LEVEL_MAX;
+		else if (capacity >= 80)
+			level = LEVEL_6;
+		else if (capacity >= 60)
+			level = LEVEL_5;
+		else if (capacity >= 40)
+			level = LEVEL_4;
+		else if (capacity >= 25)
+			level = LEVEL_3;
+		else if (capacity >= 15)
+			level = LEVEL_2;
+		else if (capacity >= 5)
+			level = LEVEL_1;
+		else
+			level = LEVEL_0;
 	}
 
-	return 0;
+	return level;
 }
 
 static void show_battery_icon(void)
@@ -322,24 +285,23 @@ static void indicator_battery_text_set(void *data, int value)
 
 static Eina_Bool indicator_battery_charging_ani_cb(void *data)
 {
-	static int i = -1;
 
 	retif(data == NULL, FAIL, "Invalid parameter!");
 
 	if (_level.current_level == _level.max_level) {
-		i = _level.max_level;
-		battery.img_obj.data = _level.charing_icon_path[i];
+		aniIndex = _level.max_level;
+		battery.img_obj.data = _level.charing_icon_path[aniIndex];
 		show_battery_icon();
 		timer = NULL;
 		return TIMER_STOP;
 	}
 
-	if (i >= _level.max_level || i < 0)
-		i = _level.current_level;
+	if (aniIndex >= _level.max_level || aniIndex < 0)
+		aniIndex = _level.current_level;
 	else
-		i++;
+		aniIndex++;
 
-	battery.img_obj.data = _level.charing_icon_path[i];
+	battery.img_obj.data = _level.charing_icon_path[aniIndex];
 	show_battery_icon();
 
 	return TIMER_CONTINUE;
@@ -348,6 +310,18 @@ static Eina_Bool indicator_battery_charging_ani_cb(void *data)
 static int indicator_change_battery_image_level(void *data, int level)
 {
 	retif(data == NULL, FAIL, "Invalid parameter!");
+
+	if (battery_level_type == BATTERY_LEVEL_20) {
+		if (level < FUEL_GAUGE_LV_MIN)
+			level = FUEL_GAUGE_LV_MIN;
+		else if (level > FUEL_GAUGE_LV_MAX)
+			level = FUEL_GAUGE_LV_MAX;
+	} else {
+		if (level < LEVEL_MIN)
+			level = LEVEL_MIN;
+		else if (level > LEVEL_MAX)
+			level = LEVEL_MAX;
+	}
 
 	/* Set arg for display image only or text with image */
 	battery.img_obj.data = _level.icon_path[level];
@@ -364,66 +338,31 @@ static void indicator_battery_check_percentage_option(void *data)
 
 	/* Check Display Percentage option(Text) */
 	ret = vconf_get_bool(VCONFKEY_SETAPPL_BATTERY_PERCENTAGE_BOOL, &status);
+	if (ret != OK)
+		ERR("Fail to get [%s: %d]",
+			VCONFKEY_SETAPPL_BATTERY_PERCENTAGE_BOOL, ret);
 
-	if (ret == OK) {
-		/* Hide Battery Icon and change Padding between all icons */
-		if (status) {
-			battery_percentage_on = EINA_TRUE;
-			battery.txt_obj.width = BATTERY_TEXTWIDTH;
-			battery.img_obj.width = BATTERY_IMAGEWIDTH;
-			battery.type = INDICATOR_TXT_WITH_IMG_ICON;
-		} else {
-			battery_percentage_on = EINA_FALSE;
-			battery.img_obj.width = BATTERY_IMAGEWIDTH;
-			battery.type = INDICATOR_IMG_ICON;
-		}
-	}
-}
-
-static void indicator_battery_check_charging(void *data)
-{
-	int ret = -1;
-	int status = 0;
-
-	ret = vconf_get_int(VCONFKEY_SYSMAN_BATTERY_CHARGE_NOW, &status);
-
-	if (ret == OK) {
-		INFO("Battery Status: %d", status);
-		if (status == 1)
-			battery_charging = EINA_TRUE;
+	indicator_util_icon_hide(&battery);
+	/* Hide Battery Icon and change Padding between all icons */
+	if (status) {
+		battery_percentage_on = EINA_TRUE;
+		battery.txt_obj.width = BATTERY_TEXTWIDTH;
+		battery.img_obj.width = BATTERY_IMAGEWIDTH;
+		battery.type = INDICATOR_TXT_WITH_IMG_ICON;
+		if (_level.current_capa < 0)
+			indicator_battery_text_set(data, 0);
 		else
-			battery_charging = EINA_FALSE;
-	} else
-		ERR("Fail to get [VCONFKEY_SYSMAN_BATTERY_CHARGE_NOW:%d]", ret);
+			indicator_battery_text_set(data, _level.current_capa);
+	} else {
+		battery_percentage_on = EINA_FALSE;
+		battery.img_obj.width = BATTERY_IMAGEWIDTH;
+		battery.type = INDICATOR_IMG_ICON;
+	}
+	indicator_util_icon_show(&battery);
 }
 
-static void indicator_battery_update_display(void *data)
+static void indicator_bttery_update_by_charging_state(void *data)
 {
-	int battery_capa = 0;
-	int ret;
-
-	retif(data == NULL, , "Invalid parameter!");
-
-	ret = vconf_get_int(VCONFKEY_SYSMAN_BATTERY_CAPACITY, &battery_capa);
-
-	if (ret != OK) {
-		ERR("Fail to get [VCONFKEY_SYSMAN_BATTERY_CAPACITY:%d]", ret);
-		return;
-	}
-
-	INFO("Battery Capacity: %d", battery_capa);
-
-	/* Check Percentage option */
-	if (battery_percentage_on == EINA_TRUE)
-		indicator_battery_text_set(data, battery_capa);
-
-	/* Check Battery Level */
-	level_check(battery_capa);
-	DBG("Battery Capacity: %d", battery_capa);
-
-	/* Check Charging. If Battery Status is not charging,
-	 * we check battery level
-	 */
 	if (battery_charging == EINA_TRUE) {
 		if (!timer) {
 			indicator_util_icon_animation_set(&battery,
@@ -433,6 +372,7 @@ static void indicator_battery_update_display(void *data)
 					data);
 		}
 	} else {
+		aniIndex = -1;
 		delete_timer();
 		indicator_util_icon_animation_set(&battery, ICON_ANI_NONE);
 		indicator_change_battery_image_level(data,
@@ -440,17 +380,71 @@ static void indicator_battery_update_display(void *data)
 	}
 }
 
+static void indicator_battery_check_charging(void *data)
+{
+	int ret = -1;
+	int status = 0;
+
+	ret = vconf_get_int(VCONFKEY_SYSMAN_BATTERY_CHARGE_NOW, &status);
+	if (ret != OK)
+		ERR("Fail to get [VCONFKEY_SYSMAN_BATTERY_CHARGE_NOW:%d]", ret);
+
+	INFO("Battery charge Status: %d", status);
+
+	if (battery_charging != !(!status)) {
+		battery_charging = !(!status);
+		indicator_bttery_update_by_charging_state(data);
+	}
+}
+
+static void indicator_battery_update_display(void *data)
+{
+	int battery_capa = 0;
+	int ret;
+	int level = 0;
+
+	retif(data == NULL, , "Invalid parameter!");
+
+	ret = vconf_get_int(VCONFKEY_SYSMAN_BATTERY_CAPACITY, &battery_capa);
+	if (ret != OK)
+		ERR("Fail to get [VCONFKEY_SYSMAN_BATTERY_CAPACITY:%d]", ret);
+
+	INFO("Battery Capacity: %d", battery_capa);
+	if (battery_capa < 0)
+		battery_capa = 0;
+	else if (battery_capa > 100)
+		battery_capa = 100;
+
+	if (battery_capa == _level.current_capa) {
+		DBG("battery capacity is not changed");
+		return;
+	}
+	_level.current_capa = battery_capa;
+
+	/* Check Percentage option */
+	if (battery_percentage_on == EINA_TRUE) {
+		indicator_battery_text_set(data, _level.current_capa);
+		show_battery_icon();
+	}
+
+	/* Check Battery Level */
+	level = __battery_capa_to_level(battery_capa);
+	if (level == _level.current_level)
+		DBG("battery level is not changed");
+	else {
+		_level.current_level = level;
+		indicator_bttery_update_by_charging_state(data);
+	}
+}
+
 static void indicator_battery_charging_cb(keynode_t *node, void *data)
 {
 	indicator_battery_check_charging(data);
-	indicator_battery_update_display(data);
 }
 
 static void indicator_battery_percentage_option_cb(keynode_t *node, void *data)
 {
 	indicator_battery_check_percentage_option(data);
-	indicator_util_icon_hide(&battery);
-	indicator_battery_update_display(data);
 }
 
 static void indicator_battery_change_cb(keynode_t *node, void *data)
@@ -463,6 +457,12 @@ static int register_battery_module(void *data)
 	int r = 0, ret = -1;
 
 	retif(data == NULL, FAIL, "Invalid parameter!");
+
+	/* DO NOT change order of below fuctions */
+	indicator_battery_level_init();
+	indicator_battery_update_display(data);
+	indicator_battery_check_charging(data);
+	indicator_battery_check_percentage_option(data);
 
 	ret = vconf_notify_key_changed(VCONFKEY_SYSMAN_BATTERY_CAPACITY,
 				       indicator_battery_change_cb, data);
@@ -491,11 +491,6 @@ static int register_battery_module(void *data)
 		ERR("Failed to register callback!");
 		r = r | ret;
 	}
-
-	indicator_battery_level_init();
-	indicator_battery_check_percentage_option(data);
-	indicator_battery_check_charging(data);
-	indicator_battery_update_display(data);
 
 	return r;
 }

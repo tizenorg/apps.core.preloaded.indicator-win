@@ -14,10 +14,10 @@
  * limitations under the License.
  */
 
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <vconf.h>
-#include <appcore-efl.h>
 #include "common.h"
 #include "indicator.h"
 #include "indicator_icon_util.h"
@@ -77,33 +77,60 @@ static void hide_image_icon(void)
 	indicator_util_icon_hide(&gps);
 }
 
-static void indicator_gps_change_cb(keynode_t *node, void *data)
+static int indicator_gps_state_get(void)
 {
-	int status;
-	int ret;
+	int ret = 0;
+	int status = VCONFKEY_LOCATION_POSITION_OFF;
 
-	retif(data == NULL, , "Invalid parameter!");
+	ret = vconf_get_int(VCONFKEY_LOCATION_POSITION_STATE, &status);
+	if (ret < 0)
+		ERR("fail to get [%s]", VCONFKEY_LOCATION_POSITION_STATE);
 
-	ret = vconf_get_int(VCONFKEY_GPS_STATE, &status);
-	if (ret == OK) {
-		INFO("GPS STATUS: %d", status);
-		switch (status) {
-		case VCONFKEY_GPS_OFF:
-			hide_image_icon();
-			break;
-		case VCONFKEY_GPS_CONNECTED:
-			show_image_icon(data, LEVEL_GPS_ON);
-			break;
-		case VCONFKEY_GPS_SEARCHING:
-			show_image_icon(data, LEVEL_GPS_SEARCHING);
-		default:
-			ERR("Invalid value!");
-			break;
-		}
-		return;
+	INFO("GPS STATUS: %d", status);
+
+	return status;
+}
+
+static void indicator_gps_state_icon_set(int status, void *data)
+{
+	INFO("GPS STATUS: %d", status);
+
+	switch (status) {
+	case VCONFKEY_LOCATION_POSITION_OFF:
+		hide_image_icon();
+		break;
+	case VCONFKEY_LOCATION_POSITION_CONNECTED:
+		show_image_icon(data, LEVEL_GPS_ON);
+		indicator_util_icon_animation_set(&gps, ICON_ANI_NONE);
+		break;
+	case VCONFKEY_LOCATION_POSITION_SEARCHING:
+		show_image_icon(data, LEVEL_GPS_SEARCHING);
+		indicator_util_icon_animation_set(&gps, ICON_ANI_BLINK);
+		break;
+	default:
+		hide_image_icon();
+		ERR("Invalid value!");
+		break;
 	}
 
-	hide_image_icon();
+	return;
+}
+
+static void indicator_gps_change_cb(keynode_t *node, void *data)
+{
+	int status = VCONFKEY_LOCATION_POSITION_OFF;
+
+	retif(data == NULL, , "Invalid parameter!");
+	retif(node == NULL, , "node is NULL");
+
+	status = vconf_keynode_get_int(node);
+	if (status < 0) {
+ 		ERR("fail to get value from node");
+		status = VCONFKEY_LOCATION_POSITION_OFF;
+	}
+
+	indicator_gps_state_icon_set(status, data);
+
 	return;
 }
 
@@ -113,12 +140,12 @@ static int register_gps_module(void *data)
 
 	retif(data == NULL, FAIL, "Invalid parameter!");
 
-	ret = vconf_notify_key_changed(VCONFKEY_GPS_STATE,
+	ret = vconf_notify_key_changed(VCONFKEY_LOCATION_POSITION_STATE,
 				       indicator_gps_change_cb, data);
 	if (ret != OK)
 		ERR("Failed to register callback!");
 
-	indicator_gps_change_cb(NULL, data);
+	indicator_gps_state_icon_set(indicator_gps_state_get(), data);
 
 	return ret;
 }
@@ -127,7 +154,7 @@ static int unregister_gps_module(void)
 {
 	int ret;
 
-	ret = vconf_ignore_key_changed(VCONFKEY_GPS_STATE,
+	ret = vconf_ignore_key_changed(VCONFKEY_LOCATION_POSITION_STATE,
 				       indicator_gps_change_cb);
 	if (ret != OK)
 		ERR("Failed to unregister callback!");
@@ -141,7 +168,7 @@ static int hib_enter_gps_module(void)
 {
 	int ret;
 
-	ret = vconf_ignore_key_changed(VCONFKEY_GPS_STATE,
+	ret = vconf_ignore_key_changed(VCONFKEY_LOCATION_POSITION_STATE,
 				       indicator_gps_change_cb);
 	if (ret != OK)
 		ERR("Failed to unregister callback!");
@@ -155,10 +182,12 @@ static int hib_leave_gps_module(void *data)
 
 	retif(data == NULL, FAIL, "Invalid parameter!");
 
-	ret = vconf_notify_key_changed(VCONFKEY_GPS_STATE,
+	ret = vconf_notify_key_changed(VCONFKEY_LOCATION_POSITION_STATE,
 				       indicator_gps_change_cb, data);
 	retif(ret != OK, FAIL, "Failed to register callback!");
 
-	indicator_gps_change_cb(NULL, data);
+	indicator_gps_state_icon_set(indicator_gps_state_get(), data);
+
 	return OK;
 }
+

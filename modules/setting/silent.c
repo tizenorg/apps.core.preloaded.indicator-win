@@ -14,10 +14,10 @@
  * limitations under the License.
  */
 
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <vconf.h>
-#include <appcore-efl.h>
 #include "common.h"
 #include "indicator.h"
 #include "indicator_ui.h"
@@ -37,7 +37,7 @@ Indicator_Icon_Object silent = {
 	.name = MODULE_NAME,
 	.priority = ICON_PRIORITY,
 	.always_top = EINA_FALSE,
-	.exist_in_view = EINA_FALSE,	
+	.exist_in_view = EINA_FALSE,
 	.txt_obj = {0,},
 	.img_obj = {0,},
 	.obj_exist = EINA_FALSE,

@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-#include <appcore-efl.h>
+
 #include <Ecore_X.h>
 #include <Eina.h>
 #include "common.h"
@@ -496,6 +496,23 @@ int indicator_util_get_priority_in_move_area(Evas_Coord curr_x,
 
 
 	/* Non Fixed Area check for show/hide quickpanel */
+	return -1;
+}
+
+int indicator_util_check_home_icon_area(Evas_Coord curr_x, Evas_Coord curr_y)
+{
+	Evas_Coord x, y, w, h;
+
+	/* Home Area Check for launching home */
+	evas_object_geometry_get(_fixed_box[INDICATOR_PRIORITY_FIXED5],
+			&x, &y, &w, &h);
+
+	INFO("[Home icon area] [%d, %d] [wxh][%dx%d], cur[%d, %d]",
+			x, y, w, h, curr_x, curr_y);
+
+	if (curr_x >= x && curr_x <= x + w && curr_y >= y && curr_y <= y + h)
+		return 0;
+
 	return -1;
 }
 

@@ -14,10 +14,10 @@
  * limitations under the License.
  */
 
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <vconf.h>
-#include <appcore-efl.h>
 #include "common.h"
 #include "indicator.h"
 #include "indicator_ui.h"
@@ -65,7 +65,7 @@ static void change_home_icon_cb(keynode_t *node, void *data)
 			home.img_obj.data = icon_path[1];
 			indicator_util_icon_show(&home);
 		} else {
-			INFO("change_home_icon_cb : Home Button Pressed!");
+			INFO("change_home_icon_cb : Home Button Released!");
 			home.img_obj.data = icon_path[0];
 			indicator_util_icon_show(&home);
 		}

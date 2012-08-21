@@ -14,17 +14,17 @@
  * limitations under the License.
  */
 
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <vconf.h>
-#include <appcore-efl.h>
 #include "common.h"
 #include "indicator.h"
 #include "indicator_icon_util.h"
 #include "modules.h"
 #include "indicator_ui.h"
 
-#define ICON_PRIORITY	INDICATOR_PRIORITY_FIXED4
+#define ICON_PRIORITY	INDICATOR_PRIORITY_NON_FIXED_4
 #define MODULE_NAME		"mobile_hotspot"
 
 static int register_mobile_hotspot_module(void *data);
@@ -39,7 +39,7 @@ Indicator_Icon_Object mobile_hotspot = {
 	.txt_obj = {0,},
 	.img_obj = {0,},
 	.obj_exist = EINA_FALSE,
-	.fixed = EINA_TRUE,
+	.fixed = EINA_FALSE,
 	.init = register_mobile_hotspot_module,
 	.fini = unregister_mobile_hotspot_module
 };

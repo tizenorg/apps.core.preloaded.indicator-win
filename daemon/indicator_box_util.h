@@ -14,6 +14,7 @@
  * limitations under the License.
  */
 
+
 #ifndef __INDICATOR_BOX_UTIL_H__
 #define __INDICATOR_BOX_UTIL_H__
 
@@ -46,5 +47,6 @@ extern int indicator_get_max_count_in_non_fixed_list(void);
 extern Icon_AddType
 indicator_is_enable_to_insert_in_non_fixed_list(Indicator_Icon_Object *obj);
 extern int indicator_util_get_priority_in_move_area(Evas_Coord, Evas_Coord);
+int indicator_util_check_home_icon_area(Evas_Coord curr_x, Evas_Coord curr_y);
 
 #endif /*__INDICATOR_BOX_UTIL_H__*/
