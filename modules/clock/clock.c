@@ -107,11 +107,11 @@ static void indicator_clock_changed_cb(void *data)
 		if (ts->tm_hour >= 0 && ts->tm_hour < 12)
 			snprintf(ampm_buf, sizeof(ampm_buf),
 				 LABEL_STRING, AMPM_FONT_SIZE,
-				 "AM");
+				 _("IDS_COM_POP_AM_M_ABB"));
 		else
 			snprintf(ampm_buf, sizeof(ampm_buf),
 				 LABEL_STRING, AMPM_FONT_SIZE,
-				 "PM");
+				 _("IDS_COM_POP_PM_M_ABB"));
 		strftime(time_str, sizeof(time_str), "%I:%M", ts);
 	} else {
 		strftime(time_str, sizeof(time_str), "%H:%M", ts);

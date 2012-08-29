@@ -1,15 +1,6 @@
-msgid "IDS_COM_BODY_NO_SIM"
-msgstr "無 SIM 卡"
-
-msgid "IDS_COM_BODY_SEARCHING"
-msgstr "正在搜尋"
-
 msgid "IDS_COM_POP_AM_M_ABB"
 msgstr "上午"
 
 msgid "IDS_COM_POP_PM_M_ABB"
 msgstr "下午"
-
-msgid "IDS_CALL_POP_NOSERVICE"
-msgstr "無服務"
 

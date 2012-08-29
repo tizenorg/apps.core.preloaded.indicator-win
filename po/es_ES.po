@@ -1,15 +1,6 @@
-msgid "IDS_COM_BODY_NO_SIM"
-msgstr "No hay SIM"
-
-msgid "IDS_COM_BODY_SEARCHING"
-msgstr "Buscando"
-
 msgid "IDS_COM_POP_AM_M_ABB"
 msgstr "AM"
 
 msgid "IDS_COM_POP_PM_M_ABB"
 msgstr "PM"
-
-msgid "IDS_CALL_POP_NOSERVICE"
-msgstr "Sin servicio"
 

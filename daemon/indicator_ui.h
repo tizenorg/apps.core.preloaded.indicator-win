@@ -42,6 +42,9 @@
 #define ICON_THEME_FILE EDJDIR"/"PACKAGE"_icon_theme.edj"
 #define ICON_NONFIXED_THEME_FILE EDJDIR"/"PACKAGE"_icon_nonfixed_theme.edj"
 
+#define _S(str)	dgettext("sys_string", str)
+#define _(str) gettext(str)
+
 #define HOME_SCREEN_NAME		"com.samsung.live-magazine"
 #define MENU_SCREEN_NAME		"com.samsung.menu-screen"
 #define LOCK_SCREEN_NAME		"com.samsung.idle-lock"

@@ -1,6 +1,6 @@
 msgid "IDS_COM_POP_AM_M_ABB"
-msgstr "ΠΜ"
+msgstr "dop."
 
 msgid "IDS_COM_POP_PM_M_ABB"
-msgstr "ΜΜ"
+msgstr "odp."
 
