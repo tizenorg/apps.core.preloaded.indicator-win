@@ -104,6 +104,8 @@ static void indicator_clock_changed_cb(void *data)
 	    ecore_timer_add(60 - ts->tm_sec, (void *)indicator_clock_changed_cb,
 			    data);
 	if (clock_mode == INDICATOR_CLOCK_MODE_12H) {
+		char bf1[32] = { 0, };
+		int hour;
 		if (ts->tm_hour >= 0 && ts->tm_hour < 12)
 			snprintf(ampm_buf, sizeof(ampm_buf),
 				 LABEL_STRING, AMPM_FONT_SIZE,
@@ -112,7 +114,13 @@ static void indicator_clock_changed_cb(void *data)
 			snprintf(ampm_buf, sizeof(ampm_buf),
 				 LABEL_STRING, AMPM_FONT_SIZE,
 				 _("IDS_COM_POP_PM_M_ABB"));
-		strftime(time_str, sizeof(time_str), "%I:%M", ts);
+
+	        strftime(bf1, sizeof(bf1), "%l", ts);
+	        hour = atoi(bf1);
+        	strftime(bf1, sizeof(bf1), ":%M", ts);
+
+	        snprintf(time_str, sizeof(time_str), "%d%s", hour, bf1);
+//		strftime(time_str, sizeof(time_str), "%I:%M", ts);
 	} else {
 		strftime(time_str, sizeof(time_str), "%H:%M", ts);
 	}
