@@ -26,8 +26,6 @@ static Eina_List *nonfixed_icon_list = NULL;
 void indicator_icon_object_free(Indicator_Icon_Object *icon)
 {
 	if (icon) {
-		if (icon->fini)
-			icon->fini();
 
 		if (icon->obj_exist == EINA_TRUE) {
 			if (indicator_util_icon_del(icon) == EINA_TRUE) {
