@@ -1,5 +1,5 @@
-Name:       org.tizen.indicator-win
-#VCS_FROM:   apps/core/preloaded/indicator-win#ff76228b593e7626eebef1986f7c2eae4d890304
+Name:       org.tizen.indicator
+#VCS_FROM:   apps/core/preloaded/indicator-win#42d351a38d10c9a7ebc3214e5dbdffe7f32dc702
 #RS_Ver:    20160401_4
 Summary:    App in rpm
 Version:    1.0.0
