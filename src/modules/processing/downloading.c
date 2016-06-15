@@ -118,8 +118,7 @@ static void hide_downloading_icon(void)
 
 static void indicator_downloading_change_cb(keynode_t *node, void *data)
 {
-	/*int status = 0;*/
-	int result = 0;
+	int status = 0;
 
 	retm_if(data == NULL, "Invalid parameter!");
 
@@ -130,19 +129,12 @@ static void indicator_downloading_change_cb(keynode_t *node, void *data)
 	}
 	updated_while_lcd_off = 0;
 
-/*	if (vconf_get_int(VCONFKEY_WIFI_DIRECT_RECEIVING_STATE, &status) == 0)
-	{
-		result = result | status;
-	} else {
-		_E("Error getting VCONFKEY_WIFI_DIRECT_RECEIVING_STATE value");
-	}*/
+	vconf_get_int(VCONFKEY_WIFI_DIRECT_RECEIVING_STATE, &status);
 
-	if (result == 1) {
+	if (status == 1)
 		show_downloading_icon(data);
-
-	} else {
+	else
 		hide_downloading_icon();
-	}
 }
 
 static void indicator_downloading_pm_state_change_cb(keynode_t *node, void *data)
@@ -192,7 +184,7 @@ static int register_downloading_module(void *data)
 
 	set_app_state(data);
 
-//	ret = ret | vconf_notify_key_changed(VCONFKEY_WIFI_DIRECT_RECEIVING_STATE, indicator_downloading_change_cb, data);
+	ret = ret | vconf_notify_key_changed(VCONFKEY_WIFI_DIRECT_RECEIVING_STATE, indicator_downloading_change_cb, data);
 
 	ret = ret | vconf_notify_key_changed(VCONFKEY_PM_STATE,
 					indicator_downloading_pm_state_change_cb, data);
@@ -206,7 +198,7 @@ static int unregister_downloading_module(void)
 {
 	int ret = 0;
 
-//	ret = ret | vconf_ignore_key_changed(VCONFKEY_WIFI_DIRECT_RECEIVING_STATE, indicator_downloading_change_cb);
+	ret = ret | vconf_ignore_key_changed(VCONFKEY_WIFI_DIRECT_RECEIVING_STATE, indicator_downloading_change_cb);
 
 	ret = ret | vconf_ignore_key_changed(VCONFKEY_PM_STATE,
 						indicator_downloading_pm_state_change_cb);
